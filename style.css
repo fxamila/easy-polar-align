@@ -1,0 +1,65 @@
+:root{color-scheme:dark;--bg:#101719;--panel:#1a2526;--text:#f2f1e7;--muted:#93a09b;--green:#caeaa1;--line:#34403d}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:"DM Sans",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+button,select{font:inherit}
+button{cursor:pointer}
+.app{max-width:680px;margin:auto;padding:0 28px}
+.topbar{height:88px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:12px;color:var(--text);text-decoration:none;font-size:13px;font-weight:700;letter-spacing:.15em}
+.brand small{display:block;color:var(--muted);font-size:8px;letter-spacing:.18em;margin-top:3px}
+.brand-mark{color:var(--green);font-size:30px;font-weight:400;line-height:1}
+.icon-button{width:42px;height:42px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--text);display:grid;place-items:center}
+.icon-button svg{width:19px;height:19px}
+.icon-button:disabled{opacity:.35;cursor:not-allowed}
+.intro{padding:53px 0 33px}
+.eyebrow,.section-heading,.card-label,.live-pill,.card-footer,.detail>span,footer{font-size:10px;font-weight:700;letter-spacing:.14em}
+.eyebrow{color:var(--green);display:flex;align-items:center;gap:9px}
+.eyebrow-dot,.footer-dot,.live-pill span{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block}
+h1{font-family:"DM Serif Display",Georgia,serif;font-size:clamp(54px,11vw,76px);font-weight:400;letter-spacing:-.045em;line-height:.98;margin:22px 0 18px}
+h1 em{color:var(--green);font-weight:400}
+.intro p{font-size:15px;line-height:1.6;color:#a8b2ad;margin:0;max-width:340px}
+.compass-card{border:1px solid #3b4b42;background:radial-gradient(ellipse at 50% 20%,#263b30 0%,#1c2a27 56%,#1a2526 100%);border-radius:13px;padding:24px 25px 0;overflow:hidden}
+.card-top,.card-footer,.section-heading{display:flex;align-items:center;justify-content:space-between}
+.card-label{color:#c4d2c4;display:flex;gap:8px;align-items:center}
+.small-star{font-size:16px;color:var(--green)}
+.live-pill{border:1px solid #4d6251;border-radius:20px;padding:7px 9px;color:#c7d8c6;font-size:9px;letter-spacing:.09em;white-space:nowrap}
+.live-pill span{margin-right:5px;background:#a5b1a7}
+.live-pill.active span{background:var(--green);box-shadow:0 0 8px var(--green)}
+.readout{text-align:center;padding:47px 0 31px}
+.bearing{font-size:clamp(76px,18vw,112px);font-weight:500;line-height:1;letter-spacing:-.075em;font-variant-numeric:tabular-nums}
+.bearing span{font-size:.43em;vertical-align:top;position:relative;top:.1em;margin-left:6px;letter-spacing:0;color:var(--green)}
+.bearing-description{margin-top:13px;color:var(--green);font-size:11px;letter-spacing:.18em;font-weight:700}
+.scale-decoration{height:9px;margin:0 0 22px;background:repeating-linear-gradient(90deg,#617267 0 1px,transparent 1px 5%);opacity:.6}
+.card-footer{border-top:1px solid #425147;margin:0 -25px;padding:17px 25px;color:#b1c0b3;font-size:9px;letter-spacing:.1em}
+.footer-dot{width:5px;height:5px;margin-right:5px}
+.message{display:flex;align-items:flex-start;gap:12px;color:#bac7b8;font-size:12px;line-height:1.6;padding:20px 2px}
+.message-icon{color:var(--green);font-size:19px;line-height:1}
+.primary-button{background:var(--green);color:#17251a;border:0;border-radius:6px;width:100%;padding:17px 19px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center}
+.primary-button:hover{background:#d9f6b6}
+.primary-button:disabled{opacity:.6;cursor:wait}
+.details,.guide{margin-top:54px}
+.section-heading{color:#8f9f96;border-bottom:1px solid var(--line);padding-bottom:14px}
+.section-heading span:last-child{font-size:9px;color:#697a70}
+.detail-grid{display:grid;grid-template-columns:1fr 1fr}
+.detail{min-height:110px;padding:22px 8px 18px 0;border-bottom:1px solid var(--line)}
+.detail:nth-child(odd){border-right:1px solid var(--line)}
+.detail:nth-child(even){padding-left:22px}
+.detail>span{display:block;color:#899a90;font-size:9px}
+.detail strong{display:block;font-size:15px;font-weight:500;margin-top:11px;overflow-wrap:anywhere}
+.detail small{display:block;color:#819087;font-size:11px;margin-top:5px;line-height:1.4}
+.info{font-size:12px}
+.guide-row{display:flex;gap:20px;padding:20px 0;border-bottom:1px solid var(--line)}
+.guide-number{color:var(--green);font-family:Georgia,serif;font-size:14px}
+.guide-row p{margin:0;color:#9eaca4;font-size:13px;line-height:1.65}
+.guide-row strong{color:#e2e8de;font-weight:600}
+.settings{margin-top:28px;border-bottom:1px solid var(--line);padding-bottom:18px;color:#aab8ad;font-size:12px;line-height:1.6}
+.settings summary{cursor:pointer;list-style:none;color:#dfe9db;font-weight:600;display:flex;justify-content:space-between}
+.settings summary::-webkit-details-marker{display:none}
+.settings summary span{color:var(--green);font-size:18px}
+.settings p{max-width:520px}
+.settings label{display:block;color:#e3e9df;margin:16px 0 6px}
+select{width:100%;border:1px solid #4a5b50;border-radius:5px;background:#1a2526;color:var(--text);padding:11px}
+footer{display:flex;justify-content:space-between;gap:10px;padding:48px 0 35px;color:#74857b;font-size:9px}
+.noscript{position:fixed;bottom:0;background:#f4d0a6;color:#222;padding:16px;width:100%;text-align:center}
+@media(max-width:380px){.app{padding:0 20px}.topbar{height:72px}.intro{padding-top:40px}.detail:nth-child(even){padding-left:14px}.compass-card{padding-left:20px;padding-right:20px}.card-footer{margin:0 -20px;padding-left:20px;padding-right:20px}}
+@media(prefers-reduced-motion:no-preference){button{transition:background .2s,border-color .2s}}
