@@ -10,22 +10,26 @@ document.getElementById("app").addEventListener("load", () => {
   const event = (alpha, beta, gamma) => ({
     type: "deviceorientationabsolute", absolute: true, alpha, beta, gamma
   });
+  const savedCalibration = app.localStorage.getItem("northstar-surface-calibration");
 
   try {
+    app.document.getElementById("reset-calibration").click();
     const compassTab = app.document.getElementById("compass-tab");
     const poleTab = app.document.getElementById("pole-tab");
     const compassPanel = app.document.getElementById("compass-panel");
     const polePanel = app.document.getElementById("pole-panel");
-    assert(!compassPanel.hidden && polePanel.hidden && compassTab.getAttribute("aria-selected") === "true", "Compass tab initially selected");
+    assert(compassPanel.hidden && !polePanel.hidden && poleTab.getAttribute("aria-selected") === "true", "Polar tab initially selected");
+    compassTab.click();
+    assert(!compassPanel.hidden && polePanel.hidden && compassTab.getAttribute("aria-selected") === "true", "Compass tab selected");
     poleTab.click();
     assert(compassPanel.hidden && !polePanel.hidden && poleTab.getAttribute("aria-selected") === "true" &&
       poleTab.tabIndex === 0 && compassTab.tabIndex === -1, "Polar tab selected");
     poleTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
     assert(!compassPanel.hidden && polePanel.hidden && compassTab.tabIndex === 0, "Arrow key wraps to compass tab");
-    compassTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "End", bubbles: true }));
-    assert(!polePanel.hidden && poleTab.tabIndex === 0, "End selects polar tab");
-    poleTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "Home", bubbles: true }));
-    assert(!compassPanel.hidden && compassTab.tabIndex === 0, "Home selects compass tab");
+    compassTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+    assert(!polePanel.hidden && poleTab.tabIndex === 0, "Home selects polar tab");
+    poleTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "End", bubbles: true }));
+    assert(!compassPanel.hidden && compassTab.tabIndex === 0, "End selects compass tab");
     app.onOrientation(event(270, 0, 0));
     assert(text("bearing") === "90.0°", "Flat east bearing");
     app.onOrientation(event(270, 45, 50));
@@ -50,37 +54,35 @@ document.getElementById("app").addEventListener("load", () => {
     const expected = `${(Math.round((((180 + declination) % 360 + 360) % 360) * 10) % 3600 / 10).toFixed(1)}°`;
     assert(text("bearing") === expected && text("target") === "TARGET 180°", "Tilted true bearing and southern target");
 
-    const select = app.document.getElementById("sensor-reference");
     const dot = app.document.getElementById("sight-dot");
     const poleCard = app.document.querySelector(".pole-card");
-    select.value = "true";
-    select.dispatchEvent(new app.Event("change"));
     app.updateLocation({ coords: { latitude: 45, longitude: 0, altitude: null, accuracy: 10 } });
-    app.onOrientation(event(0, 45, 50));
+    const trueEvent = (alpha, beta, gamma) => event(alpha + app.eval("state.declination"), beta, gamma);
+    app.onOrientation(trueEvent(0, 45, 50));
     poleTab.click();
     assert(text("pole-result") === "0.0° away" && text("phone-altitude") === "45.0°" &&
       text("pole-altitude") === "45.0°" && dot.style.left === "50%" && dot.style.top === "50%" &&
       poleCard.style.getPropertyValue("--aim-color") === "#caeaa1", "Northern pole centered with roll");
     compassTab.click();
-    app.onOrientation(event(0, 35, 0));
+    app.onOrientation(trueEvent(0, 35, 0));
     poleTab.click();
     assert(text("pole-result") === "10.0° away", "Readings update while polar tab is hidden");
-    app.onOrientation(event(0, 35, 0));
+    app.onOrientation(trueEvent(0, 35, 0));
     assert(text("pole-result") === "10.0° away" && parseFloat(dot.style.top) > 50, "Below pole moves dot down");
-    app.onOrientation(event(0, 55, 0));
+    app.onOrientation(trueEvent(0, 55, 0));
     assert(text("pole-result") === "10.0° away" && parseFloat(dot.style.top) < 50, "Above pole moves dot up");
-    app.onOrientation(event(350, 45, 0));
+    app.onOrientation(trueEvent(350, 45, 0));
     assert(parseFloat(dot.style.left) > 50 && text("pole-result") !== "0.0° away", "Clockwise of north moves dot right");
-    app.onOrientation(event(10, 45, 0));
+    app.onOrientation(trueEvent(10, 45, 0));
     assert(parseFloat(dot.style.left) < 50, "Counterclockwise across north moves dot left");
-    app.onOrientation(event(0, 48, 0));
+    app.onOrientation(trueEvent(0, 48, 0));
     assert(text("pole-result") === "3.0° away" && poleCard.style.getPropertyValue("--aim-color") === "#e5ca86", "Intermediate target color");
-    app.onOrientation(event(180, 0, 0));
+    app.onOrientation(trueEvent(180, 0, 0));
     assert(text("pole-status").includes("edge") && Math.abs(Math.hypot(parseFloat(dot.style.left) - 50, parseFloat(dot.style.top) - 50) - 44) < 0.001, "Far target clamped to edge");
     app.updateLocation({ coords: { latitude: -35, longitude: 149, altitude: null, accuracy: 10 } });
-    app.onOrientation(event(180, 35, 0));
+    app.onOrientation(trueEvent(180, 35, 0));
     assert(text("pole-result") === "0.0° away" && text("pole-altitude") === "35.0°", "Southern pole centered");
-    app.onOrientation(event(0, 145, 0));
+    app.onOrientation(trueEvent(0, 145, 0));
     assert(text("pole-result") === "0.0° away" && text("phone-altitude") === "35.0°", "Inverted top edge centered");
     app.onOrientation(event(180, null, null));
     assert(dot.hidden && text("pole-status").includes("altitude"), "Missing altitude hides target");
@@ -88,15 +90,38 @@ document.getElementById("app").addEventListener("load", () => {
     app.onOrientation(event(180, 35, 0));
     assert(dot.hidden && text("pole-status").includes("location"), "Missing location hides target");
     app.updateLocation({ coords: { latitude: 35, longitude: 149, altitude: null, accuracy: 10 } });
-    select.value = "magnetic";
     app.eval("state.declination = null; render()");
     assert(dot.hidden && text("pole-status").includes("True north"), "Missing declination hides target");
-    select.value = "true";
     app.eval("state.lastReading = 0; render()");
     assert(dot.hidden && text("phone-altitude") === "—", "Stale sensor reading hides target");
-    results.textContent = "PASS: tabs, keyboard navigation, hidden live updates, compass orientation, both poles, projection and missing data";
+    app.updateLocation({ coords: { latitude: 35, longitude: 149, altitude: null, accuracy: 10 } });
+    app.onOrientation(trueEvent(0, 5, 3));
+    app.document.getElementById("calibrate").click();
+    assert(text("calibration-status").includes("active") && text("phone-altitude") === "0.0°", "Flat surface calibration zeros altitude with roll");
+    assert(app.localStorage.getItem("northstar-surface-calibration") !== null, "Calibration persisted");
+    app.onOrientation(trueEvent(0, 40, 3));
+    assert(Math.abs(parseFloat(text("phone-altitude")) - 35) < 0.1, "Calibration corrects tilted elevation");
+    const compassBeforeReset = text("bearing");
+    app.document.getElementById("reset-calibration").click();
+    assert(text("phone-altitude") === "40.0°" && text("bearing") === compassBeforeReset &&
+      app.localStorage.getItem("northstar-surface-calibration") === null, "Reset removes correction without changing compass");
+    app.onOrientation(trueEvent(0, 30, 0));
+    app.document.getElementById("calibrate").click();
+    assert(text("calibration-status").includes("level surface"), "Calibration rejects tilted reference");
+    app.onOrientation({ type: "deviceorientation", webkitCompassHeading: 42, webkitCompassAccuracy: 3, beta: 0, gamma: 0 });
+    assert(app.document.getElementById("accuracy").dataset.quality === "good", "Good accuracy");
+    app.onOrientation({ type: "deviceorientation", webkitCompassHeading: 42, webkitCompassAccuracy: 10, beta: 0, gamma: 0 });
+    assert(app.document.getElementById("accuracy").dataset.quality === "fair", "Fair accuracy");
+    app.onOrientation({ type: "deviceorientation", webkitCompassHeading: 42, webkitCompassAccuracy: 20, beta: 0, gamma: 0 });
+    assert(app.document.getElementById("accuracy").dataset.quality === "poor" && text("accuracy-note").includes("figure-eight"), "Poor accuracy guidance");
+    app.onOrientation(event(0, 0, 0));
+    assert(app.document.getElementById("accuracy").dataset.quality === "unknown", "Unavailable accuracy not guessed");
+    results.textContent = "PASS: tabs, orientation, poles, calibration, declination fallback and accuracy states";
   } catch (error) {
     results.textContent = `FAIL: ${error.message}`;
     throw error;
+  } finally {
+    if (savedCalibration === null) app.localStorage.removeItem("northstar-surface-calibration");
+    else app.localStorage.setItem("northstar-surface-calibration", savedCalibration);
   }
 });

@@ -5,18 +5,21 @@ const elements = {
   bearing: $("bearing"), label: $("bearing-label"), live: $("live-status"),
   reference: $("reference"), target: $("target"), message: $("message-text"),
   start: $("start"), location: $("location"), locationNote: $("location-note"),
-  declination: $("declination"), modelNote: $("model-note"), magnetic: $("magnetic"),
+  declination: $("declination"), modelNote: $("model-note"), bearingReference: $("bearing-reference"),
   targetName: $("target-name"), hemisphere: $("hemisphere"),
-  sensorReference: $("sensor-reference"), fullscreen: $("fullscreen"),
+  fullscreen: $("fullscreen"), accuracy: $("accuracy"), accuracyNote: $("accuracy-note"),
   poleCard: document.querySelector(".pole-card"), sightDot: $("sight-dot"),
   poleResult: $("pole-result"), poleStatus: $("pole-status"),
-  phoneAltitude: $("phone-altitude"), poleAltitude: $("pole-altitude")
+  phoneAltitude: $("phone-altitude"), poleAltitude: $("pole-altitude"),
+  calibrate: $("calibrate"), resetCalibration: $("reset-calibration"),
+  calibrationStatus: $("calibration-status")
 };
 
 const state = {
   heading: null, altitude: null, lastReading: 0, location: null, declination: null,
-  sensorProblem: "Start the compass and allow location for a true north reading.",
-  locationProblem: "", started: false, timer: null
+  poleHeading: null, sample: null, calibration: null, accuracy: null,
+  sensorProblem: "Connecting to compass and location…",
+  locationProblem: "", started: false, timer: null, locationRequest: 0
 };
 
 const normalize = angle => ((angle % 360) + 360) % 360;
@@ -100,7 +103,28 @@ function locationError(error) {
   state.locationProblem = error.code === 1
     ? "Location permission denied. Enable it in browser settings for true north."
     : "Location unavailable. Check location services and try again.";
+  elements.start.hidden = false;
+  elements.start.querySelector("span").textContent = "Retry compass & location";
   render();
+}
+
+function calibratedDirection(beta, gamma, calibration) {
+  const radians = Math.PI / 180;
+  const b = beta * radians;
+  const g = gamma * radians;
+  const b0 = calibration.beta * radians;
+  const g0 = calibration.gamma * radians;
+  // Express the level surface's forward direction in the device frame.
+  const x0 = Math.sin(g0) * Math.sin(b0);
+  const y0 = Math.cos(b0);
+  const z0 = -Math.cos(g0) * Math.sin(b0);
+  const x = Math.cos(g) * x0 + Math.sin(g) * z0;
+  const y = -Math.sin(b) * Math.sin(g) * x0 + Math.cos(b) * y0 + Math.sin(b) * Math.cos(g) * z0;
+  const z = -Math.cos(b) * Math.sin(g) * x0 + Math.sin(b) * y0 + Math.cos(b) * Math.cos(g) * z0;
+  return {
+    altitude: Math.asin(Math.max(-1, Math.min(1, z))) / radians,
+    headingOffset: Math.atan2(x, y) / radians - (Math.cos(b) < 0 ? 180 : 0)
+  };
 }
 
 function onOrientation(event) {
@@ -114,10 +138,24 @@ function onOrientation(event) {
     return;
   }
   state.lastReading = Date.now();
+  if (state.location && state.declination !== null) elements.start.hidden = true;
   state.heading = normalize(heading);
+  state.sample = { beta: event.beta, gamma: event.gamma };
   state.altitude = Number.isFinite(event.beta)
     ? Math.asin(Math.sin(event.beta * Math.PI / 180)) * 180 / Math.PI
     : null;
+  state.poleHeading = state.heading;
+  if (state.calibration) {
+    if (Number.isFinite(event.beta) && Number.isFinite(event.gamma)) {
+      const direction = calibratedDirection(event.beta, event.gamma, state.calibration);
+      state.altitude = direction.altitude;
+      state.poleHeading = normalize(state.heading + direction.headingOffset);
+    } else {
+      state.altitude = null;
+    }
+  }
+  state.accuracy = Number.isFinite(event.webkitCompassAccuracy) && event.webkitCompassAccuracy >= 0
+    ? event.webkitCompassAccuracy : null;
   const warnings = [];
   if (Number.isFinite(event.beta) && Math.abs(Math.cos(event.beta * Math.PI / 180)) < Math.sin(5 * Math.PI / 180)) {
     warnings.push("The phone's top edge is nearly vertical; its horizontal bearing is unstable or undefined.");
@@ -125,7 +163,7 @@ function onOrientation(event) {
   if (Number.isFinite(event.webkitCompassAccuracy) && event.webkitCompassAccuracy < 0) {
     warnings.push("Compass accuracy is unavailable. Calibrate your phone with a figure-eight motion.");
   } else if (Number.isFinite(event.webkitCompassAccuracy) && event.webkitCompassAccuracy > 15) {
-    warnings.push(`Compass reports ±${Math.round(event.webkitCompassAccuracy)}° accuracy. Calibrate away from metal.`);
+    warnings.push(`Compass reports ±${Math.round(event.webkitCompassAccuracy)}° accuracy. Calibrate with a figure-eight motion away from metal.`);
   }
   state.sensorProblem = warnings.join(" ");
   render();
@@ -171,7 +209,7 @@ function renderPole(headingAvailable, isTrue, bearing) {
   elements.sightDot.hidden = false;
   elements.sightDot.style.left = `${50 + offset.x * distance}%`;
   elements.sightDot.style.top = `${50 - offset.y * distance}%`;
-  elements.poleCard.style.setProperty("--aim-color", offset.separation <= 1 ? "#caeaa1" : offset.separation <= 5 ? "#e5ca86" : "#d49b7c");
+  elements.poleCard.style.setProperty("--aim-color", offset.separation <= 1 ? "#caeaa1" : offset.separation <= 5 ? "#e5ca86" : "#ff9b35");
   elements.poleResult.textContent = `${offset.separation.toFixed(1)}° away`;
   const directions = [];
   if (Math.abs(offset.x * offset.separation) >= 0.1) directions.push(offset.x < 0 ? "left" : "right");
@@ -183,15 +221,21 @@ function renderPole(headingAvailable, isTrue, bearing) {
 
 function render() {
   const headingAvailable = state.heading !== null && Date.now() - state.lastReading < 5000;
-  const sensorIsTrue = elements.sensorReference.value === "true";
   const hasCorrection = state.location !== null && state.declination !== null && modelValid(new Date());
-  const isTrue = headingAvailable && (sensorIsTrue || hasCorrection);
+  const isTrue = headingAvailable && hasCorrection;
   let bearing = state.heading;
-  if (headingAvailable && !sensorIsTrue && hasCorrection) bearing = normalize(bearing + state.declination);
+  if (isTrue) bearing = normalize(bearing + state.declination);
 
   elements.bearing.innerHTML = `${headingAvailable ? displayAngle(bearing).slice(0, -1) : "---"}<span>°</span>`;
-  elements.reference.textContent = isTrue ? "TRUE NORTH" : headingAvailable ? "MAGNETIC NORTH" : "TRUE NORTH";
-  elements.magnetic.textContent = headingAvailable && !sensorIsTrue ? displayAngle(state.heading) : "—";
+  elements.reference.textContent = isTrue ? "TRUE NORTH" : headingAvailable ? "MAGNETIC NORTH" : "—";
+  elements.bearingReference.textContent = isTrue ? "True north" : headingAvailable ? "Magnetic north" : "—";
+  const accuracy = headingAvailable ? state.accuracy : null;
+  const quality = accuracy === null ? "unknown" : accuracy <= 5 ? "good" : accuracy <= 15 ? "fair" : "poor";
+  elements.accuracy.dataset.quality = quality;
+  elements.accuracy.textContent = accuracy === null ? "Unavailable" : `${quality.toUpperCase()} · ±${accuracy.toFixed(1)}°`;
+  elements.accuracyNote.textContent = accuracy === null ? "Your browser may not provide an accuracy estimate." :
+    quality === "poor" ? "Calibrate your phone with a figure-eight motion, away from metal." :
+      "Device-reported estimate; local interference may still affect the bearing.";
   elements.live.classList.toggle("active", headingAvailable);
   elements.live.innerHTML = `<span></span> ${headingAvailable ? "LIVE" : state.started ? "WAITING" : "NOT STARTED"}`;
 
@@ -208,20 +252,37 @@ function render() {
       ? "ALIGNED IN AZIMUTH"
       : `${Math.abs(difference).toFixed(1)}° ${difference < 0 ? "COUNTERCLOCKWISE" : "CLOCKWISE"} OF TARGET`;
   }
-  renderPole(headingAvailable, isTrue, bearing);
+  const poleBearing = isTrue ? normalize(state.poleHeading + state.declination) : state.poleHeading;
+  renderPole(headingAvailable, isTrue, poleBearing);
   elements.message.textContent = [state.sensorProblem, state.locationProblem].filter(Boolean).join(" ") ||
     (headingAvailable && !isTrue ? "Magnetic bearing only. Allow location to correct to true north." :
       "Keep your phone away from metal. Use a star-based method for precise alignment.");
 }
 
-elements.start.addEventListener("click", async () => {
+function requestLocation() {
+  const request = ++state.locationRequest;
+  if ("geolocation" in navigator) {
+    navigator.geolocation.getCurrentPosition(
+      position => { if (request === state.locationRequest) { updateLocation(position); if (state.heading !== null && state.declination !== null) elements.start.hidden = true; } },
+      error => { if (request === state.locationRequest) locationError(error); },
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
+    );
+  } else {
+    state.locationProblem = "Location is unavailable in this browser; true north correction needs location.";
+    elements.start.hidden = false;
+  }
+}
+
+async function startCompass(userGesture) {
   if (!window.isSecureContext) {
     state.sensorProblem = "Compass and location require HTTPS (or localhost). Open this page on GitHub Pages.";
+    elements.start.hidden = false;
     render();
     return;
   }
   if (!("DeviceOrientationEvent" in window)) {
     state.sensorProblem = "This browser does not support device orientation. Try a supported mobile browser.";
+    elements.start.hidden = false;
     render();
     return;
   }
@@ -231,25 +292,31 @@ elements.start.addEventListener("click", async () => {
   clearInterval(state.timer);
   state.heading = null;
   state.altitude = null;
-  clearLocation();
+  state.sample = null;
+  state.accuracy = null;
   state.started = true;
   state.sensorProblem = "Waiting for a compass reading.";
   state.locationProblem = "";
   render();
-  if ("geolocation" in navigator) {
-    navigator.geolocation.getCurrentPosition(updateLocation, locationError, { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 });
-  } else {
-    state.locationProblem = "Location is unavailable in this browser; true north correction needs location.";
-  }
   try {
     if (typeof DeviceOrientationEvent.requestPermission === "function") {
+      if (!userGesture) {
+        state.sensorProblem = "Tap Allow compass access to enable motion and orientation.";
+        elements.start.hidden = false;
+        elements.start.querySelector("span").textContent = "Allow compass access";
+        requestLocation();
+        render();
+        return;
+      }
       const permission = await DeviceOrientationEvent.requestPermission();
       if (permission !== "granted") {
         state.sensorProblem = "Motion and orientation permission denied. Enable it in browser settings and try again.";
+        elements.start.hidden = false;
         render();
         return;
       }
     }
+    if (!state.location || state.locationProblem) requestLocation();
     window.removeEventListener("deviceorientation", onOrientation);
     window.removeEventListener("deviceorientationabsolute", onOrientation);
     window.addEventListener("deviceorientationabsolute", onOrientation);
@@ -259,6 +326,8 @@ elements.start.addEventListener("click", async () => {
       if (Date.now() - state.lastReading >= 5000) {
         state.heading = null;
         state.sensorProblem = "No compass data received. Check permissions, use a supported phone, and try again.";
+        elements.start.hidden = false;
+        elements.start.querySelector("span").textContent = "Retry compass & location";
         render();
       }
     }, 5000);
@@ -267,13 +336,76 @@ elements.start.addEventListener("click", async () => {
     render();
   } catch (error) {
     state.sensorProblem = `Could not start the compass: ${error.message || "permission request failed"}.`;
+    elements.start.hidden = false;
     render();
   } finally {
     elements.start.disabled = false;
   }
+}
+
+elements.start.addEventListener("click", () => startCompass(true));
+
+function showCalibration(message) {
+  elements.calibrationStatus.textContent = message || (state.calibration
+    ? `Surface calibration active (pitch ${state.calibration.beta.toFixed(1)}°, roll ${state.calibration.gamma.toFixed(1)}°).`
+    : "No surface calibration applied.");
+}
+
+function saveCalibration() {
+  try {
+    if (state.calibration) localStorage.setItem("northstar-surface-calibration", JSON.stringify(state.calibration));
+    else localStorage.removeItem("northstar-surface-calibration");
+    showCalibration();
+  } catch (error) {
+    showCalibration(`${state.calibration ? "Calibration is active for this session only" : "Reset applies only for this session"}; browser storage failed: ${error.message}`);
+  }
+}
+
+try {
+  const saved = localStorage.getItem("northstar-surface-calibration");
+  if (saved !== null) {
+    const calibration = JSON.parse(saved);
+    if (!calibration || !Number.isFinite(calibration.beta) || !Number.isFinite(calibration.gamma) ||
+        Math.abs(calibration.beta) > 15 || Math.abs(calibration.gamma) > 15) {
+      throw new Error("invalid saved calibration");
+    }
+    state.calibration = calibration;
+  }
+  showCalibration();
+} catch (error) {
+  showCalibration(`Could not load surface calibration: ${error.message}. Reset or calibrate again.`);
+}
+
+elements.calibrate.addEventListener("click", () => {
+  const sample = state.sample;
+  if (!sample || Date.now() - state.lastReading >= 5000 ||
+      !Number.isFinite(sample.beta) || !Number.isFinite(sample.gamma)) {
+    showCalibration("A fresh compass and tilt reading is required before calibration.");
+    return;
+  }
+  if (Math.abs(sample.beta) > 15 || Math.abs(sample.gamma) > 15) {
+    showCalibration("Place the phone screen-up on a level surface before calibrating.");
+    return;
+  }
+  state.calibration = { beta: sample.beta, gamma: sample.gamma };
+  const direction = calibratedDirection(sample.beta, sample.gamma, state.calibration);
+  state.altitude = direction.altitude;
+  state.poleHeading = normalize(state.heading + direction.headingOffset);
+  saveCalibration();
+  render();
 });
 
-elements.sensorReference.addEventListener("change", render);
+elements.resetCalibration.addEventListener("click", () => {
+  state.calibration = null;
+  if (state.sample && Number.isFinite(state.sample.beta)) {
+    state.altitude = Math.asin(Math.sin(state.sample.beta * Math.PI / 180)) * 180 / Math.PI;
+    state.poleHeading = state.heading;
+  }
+  saveCalibration();
+  render();
+});
+
+startCompass(false);
 
 function updateFullscreen() {
   const active = Boolean(document.fullscreenElement);

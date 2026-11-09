@@ -18,7 +18,7 @@
     <header class="topbar">
       <a class="brand" href="#" aria-label="Northstar home">
         <span class="brand-mark" aria-hidden="true">✳</span>
-        <span>NORTHSTAR <small>FIELD TOOLS</small></span>
+        <span>NORTHSTAR <small>VIRTUAL POLAR ALIGNMENT ASSISTANT</small></span>
       </a>
       <button class="icon-button" id="fullscreen" type="button" aria-label="Enter fullscreen" title="Enter fullscreen">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/></svg>
@@ -28,25 +28,25 @@
     <main>
       <section class="intro">
         <div class="eyebrow"><span class="eyebrow-dot"></span> A FIELD TOOL FOR STARGAZERS</div>
-        <h1>Find your<br><em>north.</em></h1>
-        <p>A little help getting your telescope pointed in the right direction.</p>
+        <h1>When stars<br><em>are hidden.</em></h1>
+        <p>A helping hand to roughly polar align your equatorial mount when Polaris or the celestial pole is out of sight.</p>
       </section>
 
       <div class="message" id="message" role="status" aria-live="polite">
         <span class="message-icon" aria-hidden="true">✧</span>
-        <span id="message-text">Start the compass and allow location for a true north reading.</span>
+        <span id="message-text">Connecting to compass and location…</span>
       </div>
 
-      <button class="primary-button" id="start" type="button">
-        <span>Start compass</span><span aria-hidden="true">↗</span>
+      <button class="primary-button" id="start" type="button" hidden>
+        <span>Allow compass access</span><span aria-hidden="true">↗</span>
       </button>
 
       <div class="view-tabs" role="tablist" aria-label="Compass views">
-        <button class="view-tab" id="compass-tab" type="button" role="tab" aria-selected="true" aria-controls="compass-panel" tabindex="0">Compass</button>
-        <button class="view-tab" id="pole-tab" type="button" role="tab" aria-selected="false" aria-controls="pole-panel" tabindex="-1">Polar alignment</button>
+        <button class="view-tab" id="pole-tab" type="button" role="tab" aria-selected="true" aria-controls="pole-panel" tabindex="0">Polar alignment</button>
+        <button class="view-tab" id="compass-tab" type="button" role="tab" aria-selected="false" aria-controls="compass-panel" tabindex="-1">Compass</button>
       </div>
 
-      <div id="compass-panel" role="tabpanel" aria-labelledby="compass-tab" tabindex="0">
+      <div id="compass-panel" role="tabpanel" aria-labelledby="compass-tab" tabindex="0" hidden>
       <section class="compass-card" aria-label="Compass bearing">
         <div class="card-top">
           <div class="card-label"><span class="small-star">✳</span> LIVE BEARING</div>
@@ -57,6 +57,7 @@
           <div class="bearing-description" id="bearing-label">AWAITING COMPASS</div>
         </div>
         <div class="scale-decoration" aria-hidden="true"></div>
+        <div class="accuracy"><span>COMPASS ACCURACY</span><strong id="accuracy" data-quality="unknown">Unavailable</strong><small id="accuracy-note">Your browser may not provide an accuracy estimate.</small></div>
         <div class="card-footer">
           <span><span class="footer-dot"></span> <span id="reference">TRUE NORTH</span></span>
           <span id="target">TARGET —</span>
@@ -64,7 +65,7 @@
       </section>
       </div>
 
-      <div id="pole-panel" role="tabpanel" aria-labelledby="pole-tab" tabindex="0" hidden>
+      <div id="pole-panel" role="tabpanel" aria-labelledby="pole-tab" tabindex="0">
       <section class="pole-card" aria-labelledby="pole-heading">
         <div class="card-top">
           <div class="card-label" id="pole-heading"><span class="small-star">✳</span> POLE TARGET</div>
@@ -87,6 +88,15 @@
         </div>
         <p class="pole-caveat">Green: within 1° · Amber: within 5° · Orange: farther away. Sensor estimate only, not a precision polar alignment. Verify under the stars.</p>
       </section>
+      <details class="settings calibration">
+        <summary>Optional surface calibration <span>+</span></summary>
+        <p>Place the phone screen-up on a level surface, resting on the same case or camera bump you will use against the mount. Keep it still, then calibrate. This corrects the surface angle for polar alignment only; it does not calibrate the compass.</p>
+        <div class="calibration-actions">
+          <button type="button" id="calibrate">Calibrate level surface</button>
+          <button type="button" id="reset-calibration">Reset</button>
+        </div>
+        <p id="calibration-status" role="status">No surface calibration applied.</p>
+      </details>
       </div>
 
       <section class="details" aria-label="Alignment details">
@@ -94,7 +104,7 @@
         <div class="detail-grid">
           <div class="detail"><span>LOCATION</span><strong id="location">Not connected</strong><small id="location-note">Needed for true north</small></div>
           <div class="detail"><span>DECLINATION <span class="info" title="Angle between magnetic north and true north">ⓘ</span></span><strong id="declination">—</strong><small id="model-note">WMM2025 · local model</small></div>
-          <div class="detail"><span>MAGNETIC BEARING</span><strong id="magnetic">—</strong><small>Before correction</small></div>
+          <div class="detail"><span>BEARING REFERENCE</span><strong id="bearing-reference">—</strong><small>True north when location is available</small></div>
           <div class="detail"><span>POLAR TARGET</span><strong id="target-name">—</strong><small id="hemisphere">Waiting for location</small></div>
         </div>
       </section>
@@ -106,16 +116,6 @@
         <div class="guide-row"><span class="guide-number">03</span><p><strong>Fine-tune under the stars.</strong> This is a starting point, not a precision polar alignment. Set your mount’s altitude to your latitude, then use a polar scope or star-based alignment.</p></div>
       </section>
 
-      <details class="settings">
-        <summary>Compass settings <span>+</span></summary>
-        <p>Most phone compasses report magnetic north. If you know your browser provides a true-north-referenced heading, select true north to avoid correcting it twice.</p>
-        <label for="sensor-reference">Sensor heading reference</label>
-        <select id="sensor-reference">
-          <option value="magnetic">Magnetic north (usual phone default)</option>
-          <option value="true">True north</option>
-        </select>
-        <p>Browser and device implementations differ. Verify the reference against a known bearing. Changing this setting does not calibrate the sensor.</p>
-      </details>
     </main>
     <footer><span>MADE FOR NIGHTS OUTSIDE</span><span>✳ &nbsp; NORTHSTAR</span></footer>
   </div>
