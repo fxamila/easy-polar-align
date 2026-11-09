@@ -19,7 +19,7 @@ const elements = {
 const state = {
   heading: null, altitude: null, lastReading: 0, location: null, declination: null,
   poleHeading: null, sample: null, calibration: null,
-  sensorProblem: "Connecting to compass and location…",
+  sensorProblem: "Tap Start compass and allow location and motion access.",
   locationProblem: "", started: false, timer: null, locationRequest: 0
 };
 
@@ -290,7 +290,7 @@ function requestLocation() {
   }
 }
 
-async function startCompass(userGesture) {
+async function startCompass() {
   if (!window.isSecureContext) {
     state.sensorProblem = "Compass and location require HTTPS (or localhost). Open this page on GitHub Pages.";
     elements.start.hidden = false;
@@ -304,6 +304,7 @@ async function startCompass(userGesture) {
     return;
   }
   elements.start.disabled = true;
+  elements.start.hidden = false;
   window.removeEventListener("deviceorientation", onOrientation);
   window.removeEventListener("deviceorientationabsolute", onOrientation);
   clearInterval(state.timer);
@@ -312,42 +313,49 @@ async function startCompass(userGesture) {
   state.sample = null;
   state.started = true;
   state.sensorProblem = "Waiting for a compass reading.";
+  elements.start.querySelector("span").textContent = "Retry compass & location";
   render();
   window.addEventListener("deviceorientationabsolute", onOrientation);
   window.addEventListener("deviceorientation", onOrientation);
-  state.lastReading = Date.now();
-  state.timer = setInterval(() => {
-    if (Date.now() - state.lastReading >= 5000) {
-      state.heading = null;
-      if (typeof DeviceOrientationEvent.requestPermission === "function" && !userGesture) {
-        state.sensorProblem = "Tap Allow compass access if your browser requires motion permission.";
-        elements.start.querySelector("span").textContent = "Allow compass access";
-      } else {
-        state.sensorProblem = "No compass data received. Check permissions, use a supported phone, and try again.";
-        elements.start.querySelector("span").textContent = "Retry compass & location";
-      }
-      elements.start.hidden = false;
-      render();
-    }
-  }, 5000);
-  if (!state.location || state.locationProblem) {
-    state.locationProblem = "";
-    requestLocation();
-  }
   try {
-    if (userGesture && typeof DeviceOrientationEvent.requestPermission === "function") {
-      const permission = await DeviceOrientationEvent.requestPermission();
+    const permissionRequest = typeof DeviceOrientationEvent.requestPermission === "function"
+      ? DeviceOrientationEvent.requestPermission() : null;
+    if (!state.location || state.locationProblem) {
+      state.locationProblem = "";
+      requestLocation();
+    }
+    if (permissionRequest) {
+      const permission = await permissionRequest;
       if (permission !== "granted") {
-        clearInterval(state.timer);
+        window.removeEventListener("deviceorientation", onOrientation);
+        window.removeEventListener("deviceorientationabsolute", onOrientation);
+        state.heading = null;
+        state.altitude = null;
+        state.sample = null;
         state.sensorProblem = "Motion and orientation permission denied. Enable it in browser settings and try again.";
         elements.start.hidden = false;
         render();
         return;
       }
     }
+    state.lastReading = Date.now();
+    state.timer = setInterval(() => {
+      if (Date.now() - state.lastReading >= 5000) {
+        state.heading = null;
+        state.sensorProblem = "No compass data received. Check permissions, use a supported phone, and try again.";
+        elements.start.hidden = false;
+        elements.start.querySelector("span").textContent = "Retry compass & location";
+        render();
+      }
+    }, 5000);
     render();
   } catch (error) {
     clearInterval(state.timer);
+    window.removeEventListener("deviceorientation", onOrientation);
+    window.removeEventListener("deviceorientationabsolute", onOrientation);
+    state.heading = null;
+    state.altitude = null;
+    state.sample = null;
     state.sensorProblem = `Could not start the compass: ${error.message || "permission request failed"}.`;
     elements.start.hidden = false;
     render();
@@ -356,7 +364,7 @@ async function startCompass(userGesture) {
   }
 }
 
-elements.start.addEventListener("click", () => startCompass(true));
+elements.start.addEventListener("click", startCompass);
 
 function showCalibration(message) {
   elements.calibrationStatus.textContent = message || (state.calibration
@@ -417,8 +425,6 @@ elements.resetCalibration.addEventListener("click", () => {
   saveCalibration();
   render();
 });
-
-startCompass(false);
 
 function updateFullscreen() {
   const active = Boolean(document.fullscreenElement);

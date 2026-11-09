@@ -20,6 +20,7 @@ document.getElementById("app").addEventListener("load", async () => {
     const poleTab = app.document.getElementById("pole-tab");
     const compassPanel = app.document.getElementById("compass-panel");
     const polePanel = app.document.getElementById("pole-panel");
+    assert(!app.document.getElementById("start").hidden && text("message-text").includes("Start compass"), "Start button visible on load");
     assert(compassPanel.hidden && !polePanel.hidden && poleTab.getAttribute("aria-selected") === "true", "Polar tab initially selected");
     compassTab.click();
     assert(!compassPanel.hidden && polePanel.hidden && compassTab.getAttribute("aria-selected") === "true", "Compass tab selected");
@@ -151,18 +152,19 @@ document.getElementById("app").addEventListener("load", async () => {
     app.DeviceOrientationEvent.requestPermission = async () => { permissionCalls++; return "granted"; };
     app.setInterval = callback => { watchdog = callback; return 0; };
     app.eval("state.locationProblem = ''");
-    await app.startCompass(false);
-    app.dispatchEvent(new app.DeviceOrientationEvent("deviceorientationabsolute", { absolute: true, alpha: 30, beta: 30, gamma: 0 }));
-    assert(permissionCalls === 0 && app.document.getElementById("start").hidden &&
-      text("reference") === "TRUE NORTH", "Previously granted compass starts without a tap");
-    await app.startCompass(false);
+    await app.startCompass();
+    assert(permissionCalls === 1 && !app.document.getElementById("start").hidden, "Start requests motion permission");
     app.eval("state.lastReading = Date.now() - 6000");
     watchdog();
-    assert(!app.document.getElementById("start").hidden && text("message-text").includes("Allow compass"), "Permission button appears when no sensor reading arrives");
-    await app.startCompass(true);
+    assert(!app.document.getElementById("start").hidden && text("message-text").includes("No compass data"), "Retry remains available when no sensor reading arrives");
+    await app.startCompass();
     app.dispatchEvent(new app.DeviceOrientationEvent("deviceorientationabsolute", { absolute: true, alpha: 30, beta: 30, gamma: 0 }));
-    assert(permissionCalls === 1 && app.document.getElementById("start").hidden, "Permission gesture starts compass");
-    results.textContent = "PASS: tabs, orientation, poles, calibration, declination and automatic startup";
+    assert(permissionCalls === 2 && app.document.getElementById("start").hidden, "Retry starts compass");
+    app.DeviceOrientationEvent.requestPermission = async () => "denied";
+    await app.startCompass();
+    assert(!app.document.getElementById("start").hidden && text("message-text").includes("denied") &&
+      text("bearing") === "---°", "Denied permission clears readings and allows retry");
+    results.textContent = "PASS: tabs, orientation, poles, calibration, declination and manual startup";
   } catch (error) {
     results.textContent = `FAIL: ${error.message}`;
     throw error;

@@ -17,7 +17,7 @@ Sensor access and compass behavior vary between devices and browsers. Desktop br
 
 ## Quick start
 
-1. Open [Northstar](https://fxamila.github.io/phone_polar_align/) on your phone. The app listens for compass readings and requests location automatically. Allow location when prompted. If the browser requires a gesture for motion permission, the app offers **Allow compass access** after waiting for a reading; tap it and allow access. Browser permission prompts cannot be bypassed.
+1. Open [Northstar](https://fxamila.github.io/phone_polar_align/) on your phone. Tap **Start compass**, then allow location and motion/orientation access when prompted. Some browsers require this tap to request sensor access, even if location permission was previously granted.
 2. Check the message on the page. If it reports missing permissions or sensor data, use **Retry compass & location** and check your browser and phone settings.
 3. If necessary, calibrate the phone's compass with a figure-eight motion away from metal. Open the **Compass** tab to see the bearing and its north reference.
 4. Open **Polar alignment**. Switch between views by tapping the tabs or swiping horizontally across a view. Point the phone's physical top edge in the direction of the mount's polar axis, with the phone aligned to a suitable surface parallel to that axis. Adjust the mount in azimuth and altitude to move the dot toward the center of the crosshair. The displayed reading describes the phone, so an incorrectly positioned phone will not represent the mount's axis.
