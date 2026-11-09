@@ -1,38 +1,100 @@
 # Northstar
 
-A static, mobile-friendly compass for a **rough** telescope polar alignment. Host the files at the root of a GitHub Pages site (or any HTTPS static host); there is no server-side code, build step, external API, or tracking. The page and bundled model work without additional network requests after the files have loaded. Location and sensor data stay in the browser.
+**A browser-based polar alignment assistant for equatorial telescope mounts.**
 
-## Use
+[Open Northstar](https://fxamila.github.io/phone_polar_align/) on your phone to get a rough starting alignment when the celestial pole is difficult to see. The app combines the phone's compass and orientation sensors with your location to estimate where to point the mount.
 
-1. Open the HTTPS site on a phone with a magnetometer. The app attempts to connect automatically; allow location when prompted. On browsers such as iPhone Safari that require a tap for motion permission, tap **Allow compass access**. If access fails, use the retry button or enable permissions in browser settings.
-2. Point the phone's physical top edge along the mount's polar axis. The phone can be tilted: the bearing is the top edge's direction projected onto the horizontal plane, measured clockwise from north. Move away from the mount and other metal, magnets, cables, and electronics to avoid magnetic interference; calibrate the phone with a figure-eight motion.
-3. Switch between the **Polar alignment** and **Compass** tabs without restarting the sensors. On the Polar alignment tab, use **Pole target** to move the dot to the crosshair. The target is 0° azimuth in the northern hemisphere or 180° in the southern hemisphere, at an altitude equal to the absolute value of your latitude. The app combines the top edge's bearing and altitude to show the angular separation from that celestial pole. The outer ring represents 15°; readings farther away are clamped to its edge. Green indicates within 1°, amber within 5°, and orange farther away. These colors describe the calculated difference, **not measurement accuracy**.
-4. Finish using a polar scope, plate solving, or another star-based method.
+> **Use this for rough alignment only.** Phone sensors and nearby metal can produce errors of several degrees or more. A green indicator or a small displayed offset does not guarantee accurate polar alignment. Finish with a polar scope, plate solving, drift alignment, or another star-based method.
 
-The fullscreen control is disabled on browsers that do not support the Fullscreen API, including some iPhone Safari versions. Browser permissions and sensor availability vary; a desktop or a phone without an absolute compass will not produce a bearing. The app ignores relative orientation readings, but accepts tilted readings. When the top edge is nearly vertical, its horizontal projection becomes very small and the bearing can be unstable; at exactly vertical it is undefined. The app warns rather than hiding the sensor reading.
+## What you need
 
-## Declination and accuracy
+- An equatorial mount with an accessible reference surface parallel to its polar axis.
+- A phone with a working compass and orientation sensors, and a supported mobile browser.
+- An HTTPS connection to the site and permission to use your location and sensors. GitHub Pages provides HTTPS.
+- A reasonably clear area away from magnets, metal, cables, and electronics for checking compass readings. The mount itself can distort the compass, so compare readings away from it.
 
-The bundled WMM2025 spherical-harmonic model calculates local declination for the current date and location directly, rather than looking up a fixed-resolution map. Its values are displayed to 0.01°, so a 0.25° change is represented. East declination is added to a magnetic bearing, west declination subtracted. GPS altitude is used when available and in the model's supported range, otherwise sea level is assumed. The model is valid from 2025-01-01 through 2029-12-31 UTC; outside that interval the app will not apply it. Update the model before 2030.
+Sensor access and compass behavior vary between devices and browsers. Desktop browsers and phones without an absolute compass may not provide a usable heading.
 
-The app assumes a **magnetic** sensor heading (including Apple's documented `webkitCompassHeading`) and automatically applies declination. If location or valid declination is unavailable, the compass explicitly shows magnetic north and the pole target is disabled. Browser implementations do not consistently expose their north reference; if the device already supplies a true-north heading, applying declination again will be wrong. Verify the reading against a known bearing. Relative, arbitrary-reference alpha readings are not accepted. The physical top of the phone remains the reference in either screen orientation.
+## Quick start
 
-On browsers providing absolute orientation, the top-edge heading is derived from the orientation angles, including a 180° reversal when the top edge passes vertical. On Safari the app uses the browser-provided `webkitCompassHeading`; its behavior and accuracy at different tilts depend on the device and browser, so verify it against a known bearing.
+1. Open [Northstar](https://fxamila.github.io/phone_polar_align/) on your phone. The app attempts to connect automatically. Allow location when prompted. If you see **Allow compass access**, tap it and allow motion and orientation access.
+2. Check the message on the page. If it reports missing permissions or sensor data, use **Retry compass & location** and check your browser and phone settings.
+3. If necessary, calibrate the phone's compass with a figure-eight motion away from metal. Open the **Compass** tab to see the bearing, its north reference, and any device-reported accuracy.
+4. Open **Polar alignment**. Point the phone's physical top edge in the direction of the mount's polar axis, with the phone aligned to a suitable surface parallel to that axis. Adjust the mount in azimuth and altitude to move the dot toward the center of the crosshair. The displayed reading describes the phone, so an incorrectly positioned phone will not represent the mount's axis.
+5. Check for magnetic interference by comparing with a reading away from the mount. Once roughly aligned, use a star-based method to fine-tune.
 
-The pole target requires location, a true-referenced heading, and the device's beta orientation angle. If any of these are unavailable, the target dot is hidden instead of guessing. Phone altitude is the elevation of the physical top edge relative to the horizon, not GPS height. Keep the phone's top edge parallel to the mount's polar axis; the reading describes the phone, not the mount itself. Near the geographic poles, heading becomes especially unstable. Magnetic interference from the mount can make the displayed dot misleading.
+The phone can be tilted. Its bearing is the direction of its top edge projected onto the horizontal plane. When the top edge is nearly vertical, that projection is small and the bearing can be unstable; at exactly vertical it is undefined.
 
-### Optional surface calibration
+## Understanding the pole target
 
-On the Polar alignment tab, open **Optional surface calibration** if a camera bump or case causes the phone to tilt on a flat surface. Rest it screen-up and still on a genuinely level surface, using the same case and contact points as on the mount, and tap **Calibrate level surface**. The app stores the measured pitch and roll locally and applies the resulting orientation correction only to the polar target; the compass display is unchanged. The phone must be close to level (within 15° of pitch and roll) and have a fresh reading. Use **Reset** to remove the correction. Recalibrate if the case or contact surface changes. This cannot compensate for a non-level reference surface, movement during calibration, or magnetic interference.
+The target is the **north celestial pole** in the northern hemisphere and the **south celestial pole** in the southern hemisphere. The app uses your latitude to set the pole's altitude above the horizon:
 
-The compass accuracy indicator uses the browser's `webkitCompassAccuracy` when provided: good is at most 5°, fair at most 15°, and poor above 15°. Many Android browsers do not expose an accuracy estimate, so the app shows **Unavailable**, not a guessed quality. These are device estimates, not guaranteed errors.
+| Hemisphere | Target true bearing | Target altitude |
+| --- | --- | --- |
+| Northern | 0° | Your latitude |
+| Southern | 180° | The absolute value of your latitude |
 
-The decimal display and model resolution are **not a promise of 0.25° pointing accuracy**. Phone sensors, calibration, local magnetic anomalies, time, location errors, nearby metal, and weak magnetic fields near the poles can cause much larger errors. The model represents the Earth's main field, not local interference. This app is not a substitute for precise polar alignment or navigation.
+The crosshair compares the target with the phone's estimated pointing direction. Left and right represent counterclockwise and clockwise azimuth relative to the target; above and below represent the vertical component of the offset.
 
-## Development
+- The number shows estimated angular separation from the pole.
+- The outer ring represents **15°**. A dot farther than 15° away stays on the outer edge until it gets closer.
+- **Green:** within 1°. **Amber:** more than 1° and up to 5°. **Orange:** more than 5°.
+- **Phone altitude** is the angle of the pointing direction above the horizon, not GPS elevation.
 
-All files can be served as static files, for example `python -m http.server 8000`, then open `http://localhost:8000`. Real sensors generally require a mobile device and HTTPS. To deploy, push the files to GitHub and enable Pages for the branch and root folder.
+These are calculated offsets, not measured error bounds. If the dot is unavailable, the app may be missing a compass heading, location, a valid true-north correction, or tilt data.
 
-With the local server running, open `http://localhost:8000/tests/compass.html` to run the browser-based orientation regression tests.
+## Optional: calibrate the phone's resting surface
 
-The files in `vendor/` are [magvar 2.0.1](https://github.com/dpyeates/magvar) by Darren Yeates, pinned to commit `148ee7d`, with small wrappers added to load its CommonJS modules directly in a browser. Its MIT license is in `vendor/LICENSE`. The model is based on [NOAA's World Magnetic Model 2025](https://www.ncei.noaa.gov/products/world-magnetic-model).
+Use this only when a camera bump or case causes the phone to rest at an angle on an otherwise level surface:
+
+1. Open **Optional surface calibration** on the Polar alignment tab.
+2. Put the phone screen-up and still on a genuinely level surface. Use the same case and contact points you plan to use against the mount.
+3. Once a compass and tilt reading is available, tap **Calibrate level surface**. The phone must be within 15° of level in both pitch and roll.
+4. Check that the calibration status says it is active. Recalibrate if the case or contact points change; tap **Reset** to remove it.
+
+The pitch and roll correction is saved in the browser's local storage when available and is applied only to the polar target, not the compass display. It cannot compensate for a reference surface that is not level, movement during calibration, or magnetic interference. This is separate from the phone's compass calibration.
+
+## Compass and true north
+
+The Compass tab shows the phone's bearing in degrees clockwise from north. With a valid location, Northstar uses the bundled **World Magnetic Model 2025** to calculate local magnetic declination and applies it to the sensor heading. East declination is added and west declination is subtracted. GPS altitude is used when available and within the model's supported range; otherwise the calculation assumes sea level.
+
+WMM2025 is valid from **January 1, 2025 through December 31, 2029 UTC**. The model calculates declination directly for the location and date rather than looking it up on a fixed grid. Declination is displayed to 0.01°, but that resolution does **not** imply that the phone can point to within 0.25°.
+
+If location or a valid declination is unavailable, the compass shows **magnetic north** instead and the pole target is disabled. The app assumes the sensor heading is magnetic; browsers do not consistently expose its reference. If a browser already supplies true north, applying declination again will produce an incorrect result. Check the reading against a known bearing, especially on a new device.
+
+The compass accuracy indicator uses the device's reported estimate when the browser exposes one: **good** is up to 5°, **fair** is above 5° and up to 15°, and **poor** is above 15°. Many Android browsers do not report an estimate, so the app shows **Unavailable** rather than guessing. Even a good estimate cannot account for all local interference.
+
+## Troubleshooting
+
+| Problem | What to check |
+| --- | --- |
+| No compass data | Use a compatible phone and browser over HTTPS. Allow motion/orientation access, check browser settings, and retry. A device without a magnetometer or absolute orientation may not work. |
+| Location denied or unavailable | Enable location services and site permission, then retry. Without location, magnetic bearing may still be shown, but the polar target cannot be calculated. |
+| Readings jump or disagree | Calibrate the compass with a figure-eight motion. Move away from the mount, metal objects, magnets, cables, and electronics. Compare with a known bearing. |
+| Surface calibration fails | Ensure a fresh compass and tilt reading is present. Place the phone screen-up and nearly level, then try again. |
+| Fullscreen is unavailable | The fullscreen button is disabled if the browser does not support the Fullscreen API, including some iPhone Safari versions. |
+| True north correction is unavailable | Check that the device date is correct and within the WMM2025 validity period; the model must be updated for 2030 and later. |
+
+## Privacy and offline behavior
+
+Northstar is a static HTML, CSS, and JavaScript site. Location, sensor readings, and declination calculations stay in the browser; the app has no server-side code, tracking, or external data API. Surface calibration is stored locally when supported.
+
+Once the page and its bundled files have loaded, calculations do not require further network requests. There is no offline installer or service worker, so reopening the site without a connection is not guaranteed.
+
+## Run locally or host your own copy
+
+No build step or package installation is required. Serve the project folder with any static server, for example:
+
+```sh
+python -m http.server 8000
+```
+
+Open `http://localhost:8000` on the same device running the server. A phone accessing a computer's server over a LAN address such as `http://192.168.1.10:8000` is **not** using a secure context; its browser may block location and sensors. Use HTTPS for testing on a separate phone.
+
+To publish your own copy on GitHub Pages, push the files to a repository, then enable Pages for the branch and root folder. Open the resulting HTTPS URL on the phone.
+
+For browser-based regression tests, run the local server and open `http://localhost:8000/tests/compass.html`. The tests simulate sensor data; they do not replace testing on a physical phone.
+
+## Model and attribution
+
+The bundled model is based on [NOAA's World Magnetic Model 2025](https://www.ncei.noaa.gov/products/world-magnetic-model). The `vendor/` files contain [magvar 2.0.1](https://github.com/dpyeates/magvar) by Darren Yeates, pinned to commit `148ee7d` and wrapped for direct browser use. Its MIT license is included in [`vendor/LICENSE`](./vendor/LICENSE).

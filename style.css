@@ -11,13 +11,8 @@ button{cursor:pointer}
 .icon-button{width:42px;height:42px;border:1px solid var(--line);border-radius:50%;background:transparent;color:var(--text);display:grid;place-items:center}
 .icon-button svg{width:19px;height:19px}
 .icon-button:disabled{opacity:.35;cursor:not-allowed}
-.intro{padding:53px 0 33px}
-.eyebrow,.section-heading,.card-label,.live-pill,.card-footer,.detail>span,footer{font-size:10px;font-weight:700;letter-spacing:.14em}
-.eyebrow{color:var(--green);display:flex;align-items:center;gap:9px}
-.eyebrow-dot,.footer-dot,.live-pill span{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block}
-h1{font-family:"DM Serif Display",Georgia,serif;font-size:clamp(54px,11vw,76px);font-weight:400;letter-spacing:-.045em;line-height:.98;margin:22px 0 18px}
-h1 em{color:var(--green);font-weight:400}
-.intro p{font-size:15px;line-height:1.6;color:#a8b2ad;margin:0;max-width:340px}
+.section-heading,.card-label,.live-pill,.card-footer,.detail>span,footer{font-size:10px;font-weight:700;letter-spacing:.14em}
+.footer-dot,.live-pill span{width:6px;height:6px;border-radius:50%;background:var(--green);display:inline-block}
 .compass-card{border:1px solid #3b4b42;background:radial-gradient(ellipse at 50% 20%,#263b30 0%,#1c2a27 56%,#1a2526 100%);border-radius:13px;padding:24px 25px 0;overflow:hidden}
 .card-top,.card-footer,.section-heading{display:flex;align-items:center;justify-content:space-between}
 .card-label{color:#c4d2c4;display:flex;gap:8px;align-items:center}
@@ -101,5 +96,5 @@ h1 em{color:var(--green);font-weight:400}
 select{width:100%;border:1px solid #4a5b50;border-radius:5px;background:#1a2526;color:var(--text);padding:11px}
 footer{display:flex;justify-content:space-between;gap:10px;padding:48px 0 35px;color:#74857b;font-size:9px}
 .noscript{position:fixed;bottom:0;background:#f4d0a6;color:#222;padding:16px;width:100%;text-align:center}
-@media(max-width:380px){.app{padding:0 20px}.topbar{height:72px}.intro{padding-top:40px}.detail:nth-child(even){padding-left:14px}.compass-card{padding-left:20px;padding-right:20px}.card-footer{margin:0 -20px;padding-left:20px;padding-right:20px}}
+@media(max-width:380px){.app{padding:0 20px}.topbar{height:72px}.detail:nth-child(even){padding-left:14px}.compass-card{padding-left:20px;padding-right:20px}.card-footer{margin:0 -20px;padding-left:20px;padding-right:20px}}
 @media(prefers-reduced-motion:no-preference){button{transition:background .2s,border-color .2s}}
