@@ -5,10 +5,10 @@ A static, mobile-friendly compass for a **rough** telescope polar alignment. Hos
 ## Use
 
 1. Open the HTTPS site on a phone with a magnetometer. Tap **Start compass** and allow orientation/motion and location permissions. Some browsers require these to be enabled in site or device settings.
-2. Hold the phone flat, screen up, and point its physical top edge along the mount's polar axis. The bearing is clockwise from north. Move away from the mount and other metal, magnets, cables, and electronics to avoid magnetic interference; calibrate the phone with a figure-eight motion.
+2. Point the phone's physical top edge along the mount's polar axis. The phone can be tilted: the bearing is the top edge's direction projected onto the horizontal plane, measured clockwise from north. Move away from the mount and other metal, magnets, cables, and electronics to avoid magnetic interference; calibrate the phone with a figure-eight motion.
 3. Aim for 0° in the northern hemisphere or 180° in the southern hemisphere. Set the mount's altitude to your latitude. Finish using a polar scope, plate solving, or another star-based method.
 
-The fullscreen control is disabled on browsers that do not support the Fullscreen API, including some iPhone Safari versions. Browser permissions and sensor availability vary; a desktop or a phone without an absolute compass will not produce a bearing. The app deliberately ignores relative orientation and readings while the phone is tilted more than 15°.
+The fullscreen control is disabled on browsers that do not support the Fullscreen API, including some iPhone Safari versions. Browser permissions and sensor availability vary; a desktop or a phone without an absolute compass will not produce a bearing. The app ignores relative orientation readings, but accepts tilted readings. When the top edge is nearly vertical, its horizontal projection becomes very small and the bearing can be unstable; at exactly vertical it is undefined. The app warns rather than hiding the sensor reading.
 
 ## Declination and accuracy
 
@@ -16,10 +16,14 @@ The bundled WMM2025 spherical-harmonic model calculates local declination for th
 
 The browser's absolute heading reference is not consistently exposed across implementations. The default assumes a **magnetic** sensor heading (including Apple's documented `webkitCompassHeading`). If you have independently verified that your browser's heading is already referenced to true north, change **Compass settings** to true north to avoid double correction. Relative, arbitrary-reference alpha readings are not accepted. The physical top of the phone remains the reference in either screen orientation.
 
+On browsers providing absolute orientation, the top-edge heading is derived from the orientation angles, including a 180° reversal when the top edge passes vertical. On Safari the app uses the browser-provided `webkitCompassHeading`; its behavior and accuracy at different tilts depend on the device and browser, so verify it against a known bearing.
+
 The decimal display and model resolution are **not a promise of 0.25° pointing accuracy**. Phone sensors, calibration, local magnetic anomalies, time, location errors, nearby metal, and weak magnetic fields near the poles can cause much larger errors. The model represents the Earth's main field, not local interference. This app is not a substitute for precise polar alignment or navigation.
 
 ## Development
 
 All files can be served as static files, for example `python -m http.server 8000`, then open `http://localhost:8000`. Real sensors generally require a mobile device and HTTPS. To deploy, push the files to GitHub and enable Pages for the branch and root folder.
+
+With the local server running, open `http://localhost:8000/tests/compass.html` to run the browser-based orientation regression tests.
 
 The files in `vendor/` are [magvar 2.0.1](https://github.com/dpyeates/magvar) by Darren Yeates, pinned to commit `148ee7d`, with small wrappers added to load its CommonJS modules directly in a browser. Its MIT license is in `vendor/LICENSE`. The model is based on [NOAA's World Magnetic Model 2025](https://www.ncei.noaa.gov/products/world-magnetic-model).

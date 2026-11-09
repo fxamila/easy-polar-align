@@ -78,29 +78,25 @@ function locationError(error) {
 function onOrientation(event) {
   let heading = null;
   if (Number.isFinite(event.webkitCompassHeading) && event.webkitCompassHeading >= 0) {
-    if (Number.isFinite(event.webkitCompassAccuracy) && event.webkitCompassAccuracy < 0) {
-      state.heading = null;
-      state.sensorProblem = "Compass accuracy is unavailable. Calibrate your phone with a figure-eight motion.";
-      render();
-      return;
-    }
     heading = event.webkitCompassHeading;
   } else if ((event.absolute || event.type === "deviceorientationabsolute") && Number.isFinite(event.alpha)) {
-    heading = normalize(360 - event.alpha);
+    // The projected top edge reverses direction when beta passes vertical.
+    heading = normalize(360 - event.alpha + (Number.isFinite(event.beta) && Math.cos(event.beta * Math.PI / 180) < 0 ? 180 : 0));
   } else {
     return;
   }
   state.lastReading = Date.now();
-  if (!Number.isFinite(event.beta) || !Number.isFinite(event.gamma) ||
-      Math.abs(event.beta) > 15 || Math.abs(event.gamma) > 15) {
-    state.heading = null;
-    state.sensorProblem = "Hold the phone flat, screen facing up, to get a reliable bearing.";
-  } else {
-    state.heading = normalize(heading);
-    state.sensorProblem = Number.isFinite(event.webkitCompassAccuracy) && event.webkitCompassAccuracy > 15
-      ? `Compass reports ±${Math.round(event.webkitCompassAccuracy)}° accuracy. Calibrate away from metal.`
-      : "";
+  state.heading = normalize(heading);
+  const warnings = [];
+  if (Number.isFinite(event.beta) && Math.abs(Math.cos(event.beta * Math.PI / 180)) < Math.sin(5 * Math.PI / 180)) {
+    warnings.push("The phone's top edge is nearly vertical; its horizontal bearing is unstable or undefined.");
   }
+  if (Number.isFinite(event.webkitCompassAccuracy) && event.webkitCompassAccuracy < 0) {
+    warnings.push("Compass accuracy is unavailable. Calibrate your phone with a figure-eight motion.");
+  } else if (Number.isFinite(event.webkitCompassAccuracy) && event.webkitCompassAccuracy > 15) {
+    warnings.push(`Compass reports ±${Math.round(event.webkitCompassAccuracy)}° accuracy. Calibrate away from metal.`);
+  }
+  state.sensorProblem = warnings.join(" ");
   render();
 }
 
@@ -131,9 +127,9 @@ function render() {
       ? "POINTING AT POLAR TARGET"
       : `${Math.abs(difference).toFixed(1)}° ${difference < 0 ? "WEST" : "EAST"} OF POLAR TARGET`;
   }
-  elements.message.textContent = state.sensorProblem || state.locationProblem ||
+  elements.message.textContent = [state.sensorProblem, state.locationProblem].filter(Boolean).join(" ") ||
     (headingAvailable && !isTrue ? "Magnetic bearing only. Allow location to correct to true north." :
-      "Keep your phone flat and away from metal. Use a star-based method for precise alignment.");
+      "Keep your phone away from metal. Use a star-based method for precise alignment.");
 }
 
 elements.start.addEventListener("click", async () => {
@@ -154,7 +150,7 @@ elements.start.addEventListener("click", async () => {
   state.heading = null;
   clearLocation();
   state.started = true;
-  state.sensorProblem = "Waiting for a compass reading. Hold your phone flat.";
+  state.sensorProblem = "Waiting for a compass reading.";
   state.locationProblem = "";
   render();
   if ("geolocation" in navigator) {
