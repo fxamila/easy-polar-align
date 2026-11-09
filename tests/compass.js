@@ -12,6 +12,20 @@ document.getElementById("app").addEventListener("load", () => {
   });
 
   try {
+    const compassTab = app.document.getElementById("compass-tab");
+    const poleTab = app.document.getElementById("pole-tab");
+    const compassPanel = app.document.getElementById("compass-panel");
+    const polePanel = app.document.getElementById("pole-panel");
+    assert(!compassPanel.hidden && polePanel.hidden && compassTab.getAttribute("aria-selected") === "true", "Compass tab initially selected");
+    poleTab.click();
+    assert(compassPanel.hidden && !polePanel.hidden && poleTab.getAttribute("aria-selected") === "true" &&
+      poleTab.tabIndex === 0 && compassTab.tabIndex === -1, "Polar tab selected");
+    poleTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
+    assert(!compassPanel.hidden && polePanel.hidden && compassTab.tabIndex === 0, "Arrow key wraps to compass tab");
+    compassTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "End", bubbles: true }));
+    assert(!polePanel.hidden && poleTab.tabIndex === 0, "End selects polar tab");
+    poleTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+    assert(!compassPanel.hidden && compassTab.tabIndex === 0, "Home selects compass tab");
     app.onOrientation(event(270, 0, 0));
     assert(text("bearing") === "90.0°", "Flat east bearing");
     app.onOrientation(event(270, 45, 50));
@@ -43,9 +57,14 @@ document.getElementById("app").addEventListener("load", () => {
     select.dispatchEvent(new app.Event("change"));
     app.updateLocation({ coords: { latitude: 45, longitude: 0, altitude: null, accuracy: 10 } });
     app.onOrientation(event(0, 45, 50));
+    poleTab.click();
     assert(text("pole-result") === "0.0° away" && text("phone-altitude") === "45.0°" &&
       text("pole-altitude") === "45.0°" && dot.style.left === "50%" && dot.style.top === "50%" &&
       poleCard.style.getPropertyValue("--aim-color") === "#caeaa1", "Northern pole centered with roll");
+    compassTab.click();
+    app.onOrientation(event(0, 35, 0));
+    poleTab.click();
+    assert(text("pole-result") === "10.0° away", "Readings update while polar tab is hidden");
     app.onOrientation(event(0, 35, 0));
     assert(text("pole-result") === "10.0° away" && parseFloat(dot.style.top) > 50, "Below pole moves dot down");
     app.onOrientation(event(0, 55, 0));
@@ -75,7 +94,7 @@ document.getElementById("app").addEventListener("load", () => {
     select.value = "true";
     app.eval("state.lastReading = 0; render()");
     assert(dot.hidden && text("phone-altitude") === "—", "Stale sensor reading hides target");
-    results.textContent = "PASS: compass orientation, both poles, tilt, roll, projection, target scale, colors and missing data";
+    results.textContent = "PASS: tabs, keyboard navigation, hidden live updates, compass orientation, both poles, projection and missing data";
   } catch (error) {
     results.textContent = `FAIL: ${error.message}`;
     throw error;

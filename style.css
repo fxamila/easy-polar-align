@@ -37,7 +37,11 @@ h1 em{color:var(--green);font-weight:400}
 .primary-button{background:var(--green);color:#17251a;border:0;border-radius:6px;width:100%;padding:17px 19px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center}
 .primary-button:hover{background:#d9f6b6}
 .primary-button:disabled{opacity:.6;cursor:wait}
-.pole-card{--aim-color:#d49b7c;margin-top:38px;border:1px solid #3b4b42;border-radius:13px;background:#1a2526;padding:24px;text-align:center}
+.view-tabs{display:flex;gap:4px;padding:4px;margin:28px 0 16px;border:1px solid var(--line);border-radius:8px;background:#182221}
+.view-tab{flex:1;min-width:0;min-height:44px;padding:10px 8px;border:0;border-radius:5px;background:transparent;color:#aab8ad;font-size:13px;font-weight:600}
+.view-tab[aria-selected="true"]{background:#354a39;color:var(--text)}
+.view-tab:focus-visible,[role="tabpanel"]:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.pole-card{--aim-color:#d49b7c;border:1px solid #3b4b42;border-radius:13px;background:#1a2526;padding:24px;text-align:center}
 .pole-card .card-top{text-align:left}
 .pole-scale{color:#899a90;font-size:9px;letter-spacing:.1em;font-weight:700}
 .pole-instruction,.pole-caveat{color:#9eaca4;font-size:12px;line-height:1.6}

@@ -32,6 +32,21 @@
         <p>A little help getting your telescope pointed in the right direction.</p>
       </section>
 
+      <div class="message" id="message" role="status" aria-live="polite">
+        <span class="message-icon" aria-hidden="true">✧</span>
+        <span id="message-text">Start the compass and allow location for a true north reading.</span>
+      </div>
+
+      <button class="primary-button" id="start" type="button">
+        <span>Start compass</span><span aria-hidden="true">↗</span>
+      </button>
+
+      <div class="view-tabs" role="tablist" aria-label="Compass views">
+        <button class="view-tab" id="compass-tab" type="button" role="tab" aria-selected="true" aria-controls="compass-panel" tabindex="0">Compass</button>
+        <button class="view-tab" id="pole-tab" type="button" role="tab" aria-selected="false" aria-controls="pole-panel" tabindex="-1">Polar alignment</button>
+      </div>
+
+      <div id="compass-panel" role="tabpanel" aria-labelledby="compass-tab" tabindex="0">
       <section class="compass-card" aria-label="Compass bearing">
         <div class="card-top">
           <div class="card-label"><span class="small-star">✳</span> LIVE BEARING</div>
@@ -47,16 +62,9 @@
           <span id="target">TARGET —</span>
         </div>
       </section>
-
-      <div class="message" id="message" role="status" aria-live="polite">
-        <span class="message-icon" aria-hidden="true">✧</span>
-        <span id="message-text">Start the compass and allow location for a true north reading.</span>
       </div>
 
-      <button class="primary-button" id="start" type="button">
-        <span>Start compass</span><span aria-hidden="true">↗</span>
-      </button>
-
+      <div id="pole-panel" role="tabpanel" aria-labelledby="pole-tab" tabindex="0" hidden>
       <section class="pole-card" aria-labelledby="pole-heading">
         <div class="card-top">
           <div class="card-label" id="pole-heading"><span class="small-star">✳</span> POLE TARGET</div>
@@ -79,6 +87,7 @@
         </div>
         <p class="pole-caveat">Green: within 1° · Amber: within 5° · Orange: farther away. Sensor estimate only, not a precision polar alignment. Verify under the stars.</p>
       </section>
+      </div>
 
       <section class="details" aria-label="Alignment details">
         <div class="section-heading"><span>YOUR ALIGNMENT</span><span>01 / 02</span></div>
