@@ -35,7 +35,47 @@ document.getElementById("app").addEventListener("load", () => {
     const declination = app.calculateDeclination(-35, 149, 0, new Date());
     const expected = `${(Math.round((((180 + declination) % 360 + 360) % 360) * 10) % 3600 / 10).toFixed(1)}°`;
     assert(text("bearing") === expected && text("target") === "TARGET 180°", "Tilted true bearing and southern target");
-    results.textContent = "PASS: flat, tilted, vertical, inverted, missing tilt, WebKit and true-north cases";
+
+    const select = app.document.getElementById("sensor-reference");
+    const dot = app.document.getElementById("sight-dot");
+    const poleCard = app.document.querySelector(".pole-card");
+    select.value = "true";
+    select.dispatchEvent(new app.Event("change"));
+    app.updateLocation({ coords: { latitude: 45, longitude: 0, altitude: null, accuracy: 10 } });
+    app.onOrientation(event(0, 45, 50));
+    assert(text("pole-result") === "0.0° away" && text("phone-altitude") === "45.0°" &&
+      text("pole-altitude") === "45.0°" && dot.style.left === "50%" && dot.style.top === "50%" &&
+      poleCard.style.getPropertyValue("--aim-color") === "#caeaa1", "Northern pole centered with roll");
+    app.onOrientation(event(0, 35, 0));
+    assert(text("pole-result") === "10.0° away" && parseFloat(dot.style.top) > 50, "Below pole moves dot down");
+    app.onOrientation(event(0, 55, 0));
+    assert(text("pole-result") === "10.0° away" && parseFloat(dot.style.top) < 50, "Above pole moves dot up");
+    app.onOrientation(event(350, 45, 0));
+    assert(parseFloat(dot.style.left) > 50 && text("pole-result") !== "0.0° away", "Clockwise of north moves dot right");
+    app.onOrientation(event(10, 45, 0));
+    assert(parseFloat(dot.style.left) < 50, "Counterclockwise across north moves dot left");
+    app.onOrientation(event(0, 48, 0));
+    assert(text("pole-result") === "3.0° away" && poleCard.style.getPropertyValue("--aim-color") === "#e5ca86", "Intermediate target color");
+    app.onOrientation(event(180, 0, 0));
+    assert(text("pole-status").includes("edge") && Math.abs(Math.hypot(parseFloat(dot.style.left) - 50, parseFloat(dot.style.top) - 50) - 44) < 0.001, "Far target clamped to edge");
+    app.updateLocation({ coords: { latitude: -35, longitude: 149, altitude: null, accuracy: 10 } });
+    app.onOrientation(event(180, 35, 0));
+    assert(text("pole-result") === "0.0° away" && text("pole-altitude") === "35.0°", "Southern pole centered");
+    app.onOrientation(event(0, 145, 0));
+    assert(text("pole-result") === "0.0° away" && text("phone-altitude") === "35.0°", "Inverted top edge centered");
+    app.onOrientation(event(180, null, null));
+    assert(dot.hidden && text("pole-status").includes("altitude"), "Missing altitude hides target");
+    app.locationError({ code: 1 });
+    app.onOrientation(event(180, 35, 0));
+    assert(dot.hidden && text("pole-status").includes("location"), "Missing location hides target");
+    app.updateLocation({ coords: { latitude: 35, longitude: 149, altitude: null, accuracy: 10 } });
+    select.value = "magnetic";
+    app.eval("state.declination = null; render()");
+    assert(dot.hidden && text("pole-status").includes("True north"), "Missing declination hides target");
+    select.value = "true";
+    app.eval("state.lastReading = 0; render()");
+    assert(dot.hidden && text("phone-altitude") === "—", "Stale sensor reading hides target");
+    results.textContent = "PASS: compass orientation, both poles, tilt, roll, projection, target scale, colors and missing data";
   } catch (error) {
     results.textContent = `FAIL: ${error.message}`;
     throw error;

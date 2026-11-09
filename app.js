@@ -7,11 +7,14 @@ const elements = {
   start: $("start"), location: $("location"), locationNote: $("location-note"),
   declination: $("declination"), modelNote: $("model-note"), magnetic: $("magnetic"),
   targetName: $("target-name"), hemisphere: $("hemisphere"),
-  sensorReference: $("sensor-reference"), fullscreen: $("fullscreen")
+  sensorReference: $("sensor-reference"), fullscreen: $("fullscreen"),
+  poleCard: document.querySelector(".pole-card"), sightDot: $("sight-dot"),
+  poleResult: $("pole-result"), poleStatus: $("pole-status"),
+  phoneAltitude: $("phone-altitude"), poleAltitude: $("pole-altitude")
 };
 
 const state = {
-  heading: null, lastReading: 0, location: null, declination: null,
+  heading: null, altitude: null, lastReading: 0, location: null, declination: null,
   sensorProblem: "Start the compass and allow location for a true north reading.",
   locationProblem: "", started: false, timer: null
 };
@@ -87,6 +90,9 @@ function onOrientation(event) {
   }
   state.lastReading = Date.now();
   state.heading = normalize(heading);
+  state.altitude = Number.isFinite(event.beta)
+    ? Math.asin(Math.sin(event.beta * Math.PI / 180)) * 180 / Math.PI
+    : null;
   const warnings = [];
   if (Number.isFinite(event.beta) && Math.abs(Math.cos(event.beta * Math.PI / 180)) < Math.sin(5 * Math.PI / 180)) {
     warnings.push("The phone's top edge is nearly vertical; its horizontal bearing is unstable or undefined.");
@@ -98,6 +104,56 @@ function onOrientation(event) {
   }
   state.sensorProblem = warnings.join(" ");
   render();
+}
+
+function poleOffset(bearing, altitude, targetBearing, targetAltitude) {
+  const radians = Math.PI / 180;
+  const azimuth = (bearing - targetBearing) * radians;
+  const elevation = altitude * radians;
+  const targetElevation = targetAltitude * radians;
+  const east = Math.cos(elevation) * Math.sin(azimuth);
+  const up = Math.sin(elevation) * Math.cos(targetElevation) -
+    Math.cos(elevation) * Math.cos(azimuth) * Math.sin(targetElevation);
+  const forward = Math.sin(elevation) * Math.sin(targetElevation) +
+    Math.cos(elevation) * Math.cos(azimuth) * Math.cos(targetElevation);
+  const radial = Math.hypot(east, up);
+  const separation = Math.atan2(radial, forward) / radians;
+  // The antipode has no unique direction; place it on the right edge.
+  const x = radial < 1e-12 ? (forward < 0 ? 1 : 0) : east / radial;
+  const y = radial < 1e-12 ? 0 : up / radial;
+  return { separation, x, y };
+}
+
+function renderPole(headingAvailable, isTrue, bearing) {
+  const altitudeAvailable = headingAvailable && state.altitude !== null;
+  elements.phoneAltitude.textContent = altitudeAvailable ? `${state.altitude.toFixed(1)}°` : "—";
+  elements.poleAltitude.textContent = state.location ? `${Math.abs(state.location.latitude).toFixed(1)}°` : "—";
+
+  if (!headingAvailable || !state.location || !isTrue || !altitudeAvailable) {
+    elements.sightDot.hidden = true;
+    elements.poleResult.textContent = "—";
+    elements.poleCard.style.removeProperty("--aim-color");
+    elements.poleStatus.textContent = !headingAvailable ? "Waiting for a compass reading." :
+      !state.location ? "Allow location to find the celestial pole." :
+      !isTrue ? "True north correction is unavailable; the pole target needs a true bearing." :
+      "Phone altitude is unavailable from your browser.";
+    return;
+  }
+
+  const targetBearing = state.location.latitude < 0 ? 180 : 0;
+  const offset = poleOffset(bearing, state.altitude, targetBearing, Math.abs(state.location.latitude));
+  const distance = Math.min(offset.separation / 15, 1) * 44;
+  elements.sightDot.hidden = false;
+  elements.sightDot.style.left = `${50 + offset.x * distance}%`;
+  elements.sightDot.style.top = `${50 - offset.y * distance}%`;
+  elements.poleCard.style.setProperty("--aim-color", offset.separation <= 1 ? "#caeaa1" : offset.separation <= 5 ? "#e5ca86" : "#d49b7c");
+  elements.poleResult.textContent = `${offset.separation.toFixed(1)}° away`;
+  const directions = [];
+  if (Math.abs(offset.x * offset.separation) >= 0.1) directions.push(offset.x < 0 ? "left" : "right");
+  if (Math.abs(offset.y * offset.separation) >= 0.1) directions.push(offset.y < 0 ? "below" : "above");
+  elements.poleStatus.textContent = offset.separation <= 1 ? "Close to the pole target (sensor estimate)." :
+    `Dot is ${directions.join(" and ")} of center.` +
+    (offset.separation > 15 ? " It stays at the edge until within 15°." : " Move it to the center.");
 }
 
 function render() {
@@ -124,9 +180,10 @@ function render() {
     const target = state.location.latitude < 0 ? 180 : 0;
     const difference = ((bearing - target + 540) % 360) - 180;
     elements.label.textContent = Math.abs(difference) < 0.05
-      ? "POINTING AT POLAR TARGET"
-      : `${Math.abs(difference).toFixed(1)}° ${difference < 0 ? "WEST" : "EAST"} OF POLAR TARGET`;
+      ? "ALIGNED IN AZIMUTH"
+      : `${Math.abs(difference).toFixed(1)}° ${difference < 0 ? "COUNTERCLOCKWISE" : "CLOCKWISE"} OF TARGET`;
   }
+  renderPole(headingAvailable, isTrue, bearing);
   elements.message.textContent = [state.sensorProblem, state.locationProblem].filter(Boolean).join(" ") ||
     (headingAvailable && !isTrue ? "Magnetic bearing only. Allow location to correct to true north." :
       "Keep your phone away from metal. Use a star-based method for precise alignment.");
@@ -148,6 +205,7 @@ elements.start.addEventListener("click", async () => {
   window.removeEventListener("deviceorientationabsolute", onOrientation);
   clearInterval(state.timer);
   state.heading = null;
+  state.altitude = null;
   clearLocation();
   state.started = true;
   state.sensorProblem = "Waiting for a compass reading.";

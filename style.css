@@ -37,6 +37,30 @@ h1 em{color:var(--green);font-weight:400}
 .primary-button{background:var(--green);color:#17251a;border:0;border-radius:6px;width:100%;padding:17px 19px;font-weight:700;font-size:13px;display:flex;justify-content:space-between;align-items:center}
 .primary-button:hover{background:#d9f6b6}
 .primary-button:disabled{opacity:.6;cursor:wait}
+.pole-card{--aim-color:#d49b7c;margin-top:38px;border:1px solid #3b4b42;border-radius:13px;background:#1a2526;padding:24px;text-align:center}
+.pole-card .card-top{text-align:left}
+.pole-scale{color:#899a90;font-size:9px;letter-spacing:.1em;font-weight:700}
+.pole-instruction,.pole-caveat{color:#9eaca4;font-size:12px;line-height:1.6}
+.pole-instruction{max-width:330px;margin:18px auto 10px}
+.pole-sight{position:relative;width:min(100%,240px);aspect-ratio:1;margin:18px auto}
+.sight-ring,.sight-line,.sight-center,.sight-dot{position:absolute;left:50%;top:50%}
+.sight-ring{border:1px solid #51665a;border-radius:50%;transform:translate(-50%,-50%)}
+.sight-ring-outer{width:88%;height:88%}
+.sight-ring-inner{width:44%;height:44%;border-style:dashed}
+.sight-line{background:#51665a;transform:translate(-50%,-50%)}
+.sight-line-horizontal{width:100%;height:1px}
+.sight-line-vertical{width:1px;height:100%}
+.sight-center{width:12px;height:12px;border:1px solid var(--green);border-radius:50%;transform:translate(-50%,-50%);background:var(--panel)}
+.sight-dot{width:16px;height:16px;border:2px solid #1a2526;border-radius:50%;background:var(--aim-color);box-shadow:0 0 0 2px var(--aim-color),0 0 16px var(--aim-color);transform:translate(-50%,-50%)}
+.sight-dot[hidden]{display:none}
+.pole-result{color:var(--aim-color);font-size:30px;font-weight:600;font-variant-numeric:tabular-nums}
+.pole-status{color:#d5ded2;font-size:12px;line-height:1.5;min-height:2em;margin:8px 0 18px}
+.pole-readings{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.pole-readings div{padding:16px 8px}
+.pole-readings div+div{border-left:1px solid var(--line)}
+.pole-readings span{display:block;color:#899a90;font-size:9px;letter-spacing:.12em;font-weight:700}
+.pole-readings strong{display:block;margin-top:7px;font-size:18px;font-weight:500;font-variant-numeric:tabular-nums}
+.pole-caveat{margin:16px 0 0}
 .details,.guide{margin-top:54px}
 .section-heading{color:#8f9f96;border-bottom:1px solid var(--line);padding-bottom:14px}
 .section-heading span:last-child{font-size:9px;color:#697a70}

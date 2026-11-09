@@ -57,6 +57,29 @@
         <span>Start compass</span><span aria-hidden="true">↗</span>
       </button>
 
+      <section class="pole-card" aria-labelledby="pole-heading">
+        <div class="card-top">
+          <div class="card-label" id="pole-heading"><span class="small-star">✳</span> POLE TARGET</div>
+          <span class="pole-scale">OUTER RING 15°</span>
+        </div>
+        <p class="pole-instruction">Aim your phone’s top edge along the polar axis. Move the dot to the crosshair; left and right represent counterclockwise and clockwise azimuth.</p>
+        <div class="pole-sight" id="pole-sight" aria-hidden="true">
+          <div class="sight-ring sight-ring-outer"></div>
+          <div class="sight-ring sight-ring-inner"></div>
+          <div class="sight-line sight-line-horizontal"></div>
+          <div class="sight-line sight-line-vertical"></div>
+          <div class="sight-center"></div>
+          <div class="sight-dot" id="sight-dot" hidden></div>
+        </div>
+        <div class="pole-result" id="pole-result">—</div>
+        <p class="pole-status" id="pole-status">Start the compass and allow location to find the pole.</p>
+        <div class="pole-readings">
+          <div><span>PHONE ALTITUDE</span><strong id="phone-altitude">—</strong></div>
+          <div><span>POLE ALTITUDE</span><strong id="pole-altitude">—</strong></div>
+        </div>
+        <p class="pole-caveat">Green: within 1° · Amber: within 5° · Orange: farther away. Sensor estimate only, not a precision polar alignment. Verify under the stars.</p>
+      </section>
+
       <section class="details" aria-label="Alignment details">
         <div class="section-heading"><span>YOUR ALIGNMENT</span><span>01 / 02</span></div>
         <div class="detail-grid">
