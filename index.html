@@ -39,7 +39,9 @@
         <button class="view-tab" id="pole-tab" type="button" role="tab" aria-selected="true" aria-controls="pole-panel" tabindex="0">Polar alignment</button>
         <button class="view-tab" id="compass-tab" type="button" role="tab" aria-selected="false" aria-controls="compass-panel" tabindex="-1">Compass</button>
       </div>
+      <p class="swipe-hint">Swipe left or right to switch views</p>
 
+      <div class="view-panels" id="view-panels">
       <div id="compass-panel" role="tabpanel" aria-labelledby="compass-tab" tabindex="0" hidden>
       <section class="compass-card" aria-label="Compass bearing">
         <div class="card-top">
@@ -71,9 +73,11 @@
           <div class="sight-ring sight-ring-inner"></div>
           <div class="sight-line sight-line-horizontal"></div>
           <div class="sight-line sight-line-vertical"></div>
+          <div class="north-marker" id="north-marker" hidden><span></span></div>
           <div class="sight-center"></div>
           <div class="sight-dot" id="sight-dot" hidden></div>
         </div>
+        <p class="north-legend" id="north-legend">North marker unavailable</p>
         <div class="pole-result" id="pole-result">—</div>
         <p class="pole-status" id="pole-status">Start the compass and allow location to find the pole.</p>
         <div class="pole-readings">
@@ -91,6 +95,7 @@
         </div>
         <p id="calibration-status" role="status">No surface calibration applied.</p>
       </details>
+      </div>
       </div>
 
       <section class="details" aria-label="Alignment details">

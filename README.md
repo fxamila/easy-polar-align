@@ -20,7 +20,7 @@ Sensor access and compass behavior vary between devices and browsers. Desktop br
 1. Open [Northstar](https://fxamila.github.io/phone_polar_align/) on your phone. The app attempts to connect automatically. Allow location when prompted. If you see **Allow compass access**, tap it and allow motion and orientation access.
 2. Check the message on the page. If it reports missing permissions or sensor data, use **Retry compass & location** and check your browser and phone settings.
 3. If necessary, calibrate the phone's compass with a figure-eight motion away from metal. Open the **Compass** tab to see the bearing, its north reference, and any device-reported accuracy.
-4. Open **Polar alignment**. Point the phone's physical top edge in the direction of the mount's polar axis, with the phone aligned to a suitable surface parallel to that axis. Adjust the mount in azimuth and altitude to move the dot toward the center of the crosshair. The displayed reading describes the phone, so an incorrectly positioned phone will not represent the mount's axis.
+4. Open **Polar alignment**. Switch between views by tapping the tabs or swiping horizontally across a view. Point the phone's physical top edge in the direction of the mount's polar axis, with the phone aligned to a suitable surface parallel to that axis. Adjust the mount in azimuth and altitude to move the dot toward the center of the crosshair. The displayed reading describes the phone, so an incorrectly positioned phone will not represent the mount's axis.
 5. Check for magnetic interference by comparing with a reading away from the mount. Once roughly aligned, use a star-based method to fine-tune.
 
 The phone can be tilted. Its bearing is the direction of its top edge projected onto the horizontal plane. When the top edge is nearly vertical, that projection is small and the bearing can be unstable; at exactly vertical it is undefined.
@@ -40,6 +40,7 @@ The crosshair compares the target with the phone's estimated pointing direction.
 - The outer ring represents **15°**. A dot farther than 15° away stays on the outer edge until it gets closer.
 - **Green:** within 1°. **Amber:** more than 1° and up to 5°. **Orange:** more than 5°.
 - **Phone altitude** is the angle of the pointing direction above the horizon, not GPS elevation.
+- The **red mark** on the outer ring shows north relative to the phone's physical top edge, represented as up on the diagram. It rotates as the phone turns: for example, north is on the left when the top edge points east. The label says whether it represents true or magnetic north. It is separate from the crosshair's pole-offset axes and may be unreliable when the phone's top edge is nearly vertical.
 
 These are calculated offsets, not measured error bounds. If the dot is unavailable, the app may be missing a compass heading, location, a valid true-north correction, or tilt data.
 

@@ -9,6 +9,7 @@ const elements = {
   targetName: $("target-name"), hemisphere: $("hemisphere"),
   fullscreen: $("fullscreen"), accuracy: $("accuracy"), accuracyNote: $("accuracy-note"),
   poleCard: document.querySelector(".pole-card"), sightDot: $("sight-dot"),
+  northMarker: $("north-marker"), northLegend: $("north-legend"),
   poleResult: $("pole-result"), poleStatus: $("pole-status"),
   phoneAltitude: $("phone-altitude"), poleAltitude: $("pole-altitude"),
   calibrate: $("calibrate"), resetCalibration: $("reset-calibration"),
@@ -50,6 +51,31 @@ for (const tab of tabs) {
     tabs[index].focus();
   });
 }
+
+const viewPanels = $("view-panels");
+let swipe = null;
+viewPanels.addEventListener("pointerdown", event => {
+  if (event.pointerType !== "touch") return;
+  if (!event.isPrimary) {
+    swipe = null;
+    return;
+  }
+  if (event.target.closest("button, a, input, select, textarea, summary")) return;
+  swipe = { id: event.pointerId, x: event.clientX, y: event.clientY };
+});
+window.addEventListener("pointerup", event => {
+  if (!swipe || event.pointerId !== swipe.id) return;
+  const dx = event.clientX - swipe.x;
+  const dy = event.clientY - swipe.y;
+  swipe = null;
+  if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+  const current = tabs.findIndex(tab => tab.getAttribute("aria-selected") === "true");
+  const next = current + (dx < 0 ? 1 : -1);
+  if (next >= 0 && next < tabs.length) selectTab(tabs[next]);
+});
+window.addEventListener("pointercancel", event => {
+  if (swipe && event.pointerId === swipe.id) swipe = null;
+});
 
 function calculateDeclination(latitude, longitude, altitude, date) {
   const julianDays = date.getTime() / 86400000 + 2440587.5;
@@ -225,6 +251,11 @@ function render() {
   const isTrue = headingAvailable && hasCorrection;
   let bearing = state.heading;
   if (isTrue) bearing = normalize(bearing + state.declination);
+  elements.northMarker.hidden = !headingAvailable;
+  if (headingAvailable) elements.northMarker.style.transform = `rotate(${-bearing}deg)`;
+  elements.northLegend.textContent = headingAvailable
+    ? `RED MARK: ${isTrue ? "TRUE" : "MAGNETIC"} NORTH · PHONE TOP IS UP`
+    : "NORTH MARKER UNAVAILABLE";
 
   elements.bearing.innerHTML = `${headingAvailable ? displayAngle(bearing).slice(0, -1) : "---"}<span>°</span>`;
   elements.reference.textContent = isTrue ? "TRUE NORTH" : headingAvailable ? "MAGNETIC NORTH" : "—";

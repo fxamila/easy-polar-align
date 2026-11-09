@@ -33,10 +33,12 @@ button{cursor:pointer}
 .primary-button:hover{background:#d9f6b6}
 .primary-button:disabled{opacity:.6;cursor:wait}
 .primary-button[hidden]{display:none}
-.view-tabs{display:flex;gap:4px;padding:4px;margin:28px 0 16px;border:1px solid var(--line);border-radius:8px;background:#182221}
+.view-tabs{display:flex;gap:4px;padding:4px;margin:28px 0 0;border:1px solid var(--line);border-radius:8px;background:#182221}
+.swipe-hint{text-align:center;color:#aab8ad;font-size:11px;margin:10px 0 16px}
 .view-tab{flex:1;min-width:0;min-height:44px;padding:10px 8px;border:0;border-radius:5px;background:transparent;color:#aab8ad;font-size:13px;font-weight:600}
 .view-tab[aria-selected="true"]{background:#354a39;color:var(--text)}
 .view-tab:focus-visible,[role="tabpanel"]:focus-visible{outline:2px solid var(--green);outline-offset:3px}
+.view-panels{touch-action:pan-y pinch-zoom}
 .pole-card{--aim-color:#ff9b35;border:1px solid #3b4b42;border-radius:13px;background:#1a2526;padding:24px;text-align:center}
 .pole-card .card-top{text-align:left}
 .pole-scale{color:#899a90;font-size:9px;letter-spacing:.1em;font-weight:700}
@@ -50,6 +52,10 @@ button{cursor:pointer}
 .sight-line{background:#51665a;transform:translate(-50%,-50%)}
 .sight-line-horizontal{width:100%;height:1px}
 .sight-line-vertical{width:1px;height:100%}
+.north-marker{position:absolute;inset:6%;transform-origin:center;pointer-events:none}
+.north-marker span{position:absolute;top:-7px;left:50%;width:4px;height:14px;border-radius:2px;background:#ff5656;transform:translateX(-50%);box-shadow:0 0 7px #ff5656}
+.north-marker[hidden]{display:none}
+.north-legend{color:#ff8585;font-size:10px;font-weight:700;letter-spacing:.08em;margin:0 0 12px}
 .sight-center{width:12px;height:12px;border:1px solid var(--green);border-radius:50%;transform:translate(-50%,-50%);background:var(--panel)}
 .sight-dot{width:16px;height:16px;border:2px solid #1a2526;border-radius:50%;background:var(--aim-color);box-shadow:0 0 0 2px var(--aim-color),0 0 16px var(--aim-color);transform:translate(-50%,-50%)}
 .sight-dot[hidden]{display:none}

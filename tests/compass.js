@@ -30,8 +30,36 @@ document.getElementById("app").addEventListener("load", () => {
     assert(!polePanel.hidden && poleTab.tabIndex === 0, "Home selects polar tab");
     poleTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "End", bubbles: true }));
     assert(!compassPanel.hidden && compassTab.tabIndex === 0, "End selects compass tab");
+    const pointer = (target, type, x, y, options = {}) => target.dispatchEvent(new app.PointerEvent(type, {
+      bubbles: true, pointerType: "touch", isPrimary: true, pointerId: 1, clientX: x, clientY: y, ...options
+    }));
+    pointer(compassPanel, "pointerdown", 50, 100);
+    pointer(app, "pointerup", 160, 105);
+    assert(!polePanel.hidden, "Swipe right opens polar tab");
+    pointer(polePanel, "pointerdown", 180, 100);
+    pointer(app, "pointerup", 70, 105);
+    assert(!compassPanel.hidden, "Swipe left opens compass tab");
+    pointer(compassPanel, "pointerdown", 100, 100);
+    pointer(app, "pointerup", 170, 250);
+    assert(!compassPanel.hidden, "Vertical scroll does not change tabs");
+    pointer(compassPanel, "pointerdown", 100, 100);
+    pointer(app, "pointercancel", 100, 100);
+    pointer(app, "pointerup", 200, 100);
+    assert(!compassPanel.hidden, "Cancelled swipe does not change tabs");
+    poleTab.click();
+    pointer(app.document.getElementById("calibrate"), "pointerdown", 180, 100);
+    pointer(app, "pointerup", 70, 100);
+    assert(!polePanel.hidden, "Controls do not start a swipe");
+    pointer(polePanel, "pointerdown", 180, 100);
+    pointer(polePanel, "pointerdown", 170, 100, { pointerId: 2, isPrimary: false });
+    pointer(app, "pointerup", 70, 100);
+    assert(!polePanel.hidden, "Pinch does not change tabs");
+    const north = app.document.getElementById("north-marker");
+    app.clearLocation();
     app.onOrientation(event(270, 0, 0));
     assert(text("bearing") === "90.0°", "Flat east bearing");
+    assert(!north.hidden && north.style.transform === "rotate(-90deg)" &&
+      text("north-legend").includes("MAGNETIC NORTH"), "East heading places magnetic north on left");
     app.onOrientation(event(270, 45, 50));
     assert(text("bearing") === "90.0°", "Tilted east bearing");
     app.onOrientation(event(270, 89, 0));
@@ -58,6 +86,13 @@ document.getElementById("app").addEventListener("load", () => {
     const poleCard = app.document.querySelector(".pole-card");
     app.updateLocation({ coords: { latitude: 45, longitude: 0, altitude: null, accuracy: 10 } });
     const trueEvent = (alpha, beta, gamma) => event(alpha + app.eval("state.declination"), beta, gamma);
+    app.onOrientation(trueEvent(0, 45, 50));
+    assert(Math.abs(parseFloat(north.style.transform.slice(7))) < 0.0001 &&
+      text("north-legend").includes("TRUE NORTH"), "True north marker uses declination");
+    app.onOrientation(trueEvent(270, 45, 0));
+    assert(Math.abs(parseFloat(north.style.transform.slice(7)) + 90) < 0.0001, "True north at left for east heading");
+    app.onOrientation(trueEvent(90, 45, 0));
+    assert(Math.abs(parseFloat(north.style.transform.slice(7)) + 270) < 0.0001, "True north at right for west heading");
     app.onOrientation(trueEvent(0, 45, 50));
     poleTab.click();
     assert(text("pole-result") === "0.0° away" && text("phone-altitude") === "45.0°" &&
@@ -93,7 +128,7 @@ document.getElementById("app").addEventListener("load", () => {
     app.eval("state.declination = null; render()");
     assert(dot.hidden && text("pole-status").includes("True north"), "Missing declination hides target");
     app.eval("state.lastReading = 0; render()");
-    assert(dot.hidden && text("phone-altitude") === "—", "Stale sensor reading hides target");
+    assert(dot.hidden && north.hidden && text("north-legend").includes("UNAVAILABLE") && text("phone-altitude") === "—", "Stale sensor reading hides target and north marker");
     app.updateLocation({ coords: { latitude: 35, longitude: 149, altitude: null, accuracy: 10 } });
     app.onOrientation(trueEvent(0, 5, 3));
     app.document.getElementById("calibrate").click();
