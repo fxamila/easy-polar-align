@@ -85,6 +85,9 @@ button{cursor:pointer}
 .guide-number{color:var(--green);font-family:Georgia,serif;font-size:14px}
 .guide-row p{margin:0;color:#9eaca4;font-size:13px;line-height:1.65}
 .guide-row strong{color:#e2e8de;font-weight:600}
+.about{margin-top:42px;border-top:1px solid var(--line);padding-top:22px}
+.about h1{font-size:15px;font-weight:600;line-height:1.5;margin:0;color:#e2e8de}
+.about p{color:#9eaca4;font-size:12px;line-height:1.7;margin:12px 0}
 .settings{margin-top:28px;border-bottom:1px solid var(--line);padding-bottom:18px;color:#aab8ad;font-size:12px;line-height:1.6}
 .settings summary{cursor:pointer;list-style:none;color:#dfe9db;font-weight:600;display:flex;justify-content:space-between}
 .settings summary::-webkit-details-marker{display:none}

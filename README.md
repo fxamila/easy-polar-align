@@ -94,6 +94,8 @@ Open `http://localhost:8000` on the same device running the server. A phone acce
 
 To publish your own copy on GitHub Pages, push the files to a repository, then enable Pages for the branch and root folder. Open the resulting HTTPS URL on the phone.
 
+The page's canonical and social URLs and [`sitemap.xml`](./sitemap.xml) point to the original GitHub Pages site. If you host your own copy, update these URLs to match your deployment. For Google discovery, you can verify the site in [Google Search Console](https://search.google.com/search-console/) and submit its sitemap or request indexing. Crawling and search placement are not guaranteed.
+
 For browser-based regression tests, run the local server and open `http://localhost:8000/tests/compass.html`. The tests simulate sensor data; they do not replace testing on a physical phone.
 
 ## Model and attribution
