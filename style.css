@@ -67,14 +67,6 @@ button{cursor:pointer}
 .pole-readings span{display:block;color:#899a90;font-size:9px;letter-spacing:.12em;font-weight:700}
 .pole-readings strong{display:block;margin-top:7px;font-size:18px;font-weight:500;font-variant-numeric:tabular-nums}
 .pole-caveat{margin:16px 0 0}
-.accuracy{text-align:center;padding:0 0 22px}
-.accuracy span,.accuracy small{display:block;color:#aab8ad;font-size:10px;letter-spacing:.08em}
-.accuracy strong{display:block;margin:7px 0;font-size:14px}
-.accuracy small{letter-spacing:0;line-height:1.5}
-.accuracy [data-quality="good"]{color:#caeaa1}
-.accuracy [data-quality="fair"]{color:#e5ca86}
-.accuracy [data-quality="poor"]{color:#ff9b35}
-.accuracy [data-quality="unknown"]{color:#aab8ad}
 .calibration-actions{display:flex;gap:10px}
 .calibration-actions button{border:1px solid #53675a;background:#263a2d;color:#eef4e8;border-radius:5px;padding:12px;font-size:12px;font-weight:600}
 .calibration-actions button:first-child{flex:1}

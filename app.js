@@ -7,7 +7,7 @@ const elements = {
   start: $("start"), location: $("location"), locationNote: $("location-note"),
   declination: $("declination"), modelNote: $("model-note"), bearingReference: $("bearing-reference"),
   targetName: $("target-name"), hemisphere: $("hemisphere"),
-  fullscreen: $("fullscreen"), accuracy: $("accuracy"), accuracyNote: $("accuracy-note"),
+  fullscreen: $("fullscreen"),
   poleCard: document.querySelector(".pole-card"), sightDot: $("sight-dot"),
   northMarker: $("north-marker"), northLegend: $("north-legend"),
   poleResult: $("pole-result"), poleStatus: $("pole-status"),
@@ -18,7 +18,7 @@ const elements = {
 
 const state = {
   heading: null, altitude: null, lastReading: 0, location: null, declination: null,
-  poleHeading: null, sample: null, calibration: null, accuracy: null,
+  poleHeading: null, sample: null, calibration: null,
   sensorProblem: "Connecting to compass and location…",
   locationProblem: "", started: false, timer: null, locationRequest: 0
 };
@@ -180,16 +180,9 @@ function onOrientation(event) {
       state.altitude = null;
     }
   }
-  state.accuracy = Number.isFinite(event.webkitCompassAccuracy) && event.webkitCompassAccuracy >= 0
-    ? event.webkitCompassAccuracy : null;
   const warnings = [];
   if (Number.isFinite(event.beta) && Math.abs(Math.cos(event.beta * Math.PI / 180)) < Math.sin(5 * Math.PI / 180)) {
     warnings.push("The phone's top edge is nearly vertical; its horizontal bearing is unstable or undefined.");
-  }
-  if (Number.isFinite(event.webkitCompassAccuracy) && event.webkitCompassAccuracy < 0) {
-    warnings.push("Compass accuracy is unavailable. Calibrate your phone with a figure-eight motion.");
-  } else if (Number.isFinite(event.webkitCompassAccuracy) && event.webkitCompassAccuracy > 15) {
-    warnings.push(`Compass reports ±${Math.round(event.webkitCompassAccuracy)}° accuracy. Calibrate with a figure-eight motion away from metal.`);
   }
   state.sensorProblem = warnings.join(" ");
   render();
@@ -260,13 +253,6 @@ function render() {
   elements.bearing.innerHTML = `${headingAvailable ? displayAngle(bearing).slice(0, -1) : "---"}<span>°</span>`;
   elements.reference.textContent = isTrue ? "TRUE NORTH" : headingAvailable ? "MAGNETIC NORTH" : "—";
   elements.bearingReference.textContent = isTrue ? "True north" : headingAvailable ? "Magnetic north" : "—";
-  const accuracy = headingAvailable ? state.accuracy : null;
-  const quality = accuracy === null ? "unknown" : accuracy <= 5 ? "good" : accuracy <= 15 ? "fair" : "poor";
-  elements.accuracy.dataset.quality = quality;
-  elements.accuracy.textContent = accuracy === null ? "Unavailable" : `${quality.toUpperCase()} · ±${accuracy.toFixed(1)}°`;
-  elements.accuracyNote.textContent = accuracy === null ? "Your browser may not provide an accuracy estimate." :
-    quality === "poor" ? "Calibrate your phone with a figure-eight motion, away from metal." :
-      "Device-reported estimate; local interference may still affect the bearing.";
   elements.live.classList.toggle("active", headingAvailable);
   elements.live.innerHTML = `<span></span> ${headingAvailable ? "LIVE" : state.started ? "WAITING" : "NOT STARTED"}`;
 
@@ -324,48 +310,44 @@ async function startCompass(userGesture) {
   state.heading = null;
   state.altitude = null;
   state.sample = null;
-  state.accuracy = null;
   state.started = true;
   state.sensorProblem = "Waiting for a compass reading.";
-  state.locationProblem = "";
   render();
-  try {
-    if (typeof DeviceOrientationEvent.requestPermission === "function") {
-      if (!userGesture) {
-        state.sensorProblem = "Tap Allow compass access to enable motion and orientation.";
-        elements.start.hidden = false;
+  window.addEventListener("deviceorientationabsolute", onOrientation);
+  window.addEventListener("deviceorientation", onOrientation);
+  state.lastReading = Date.now();
+  state.timer = setInterval(() => {
+    if (Date.now() - state.lastReading >= 5000) {
+      state.heading = null;
+      if (typeof DeviceOrientationEvent.requestPermission === "function" && !userGesture) {
+        state.sensorProblem = "Tap Allow compass access if your browser requires motion permission.";
         elements.start.querySelector("span").textContent = "Allow compass access";
-        requestLocation();
-        render();
-        return;
+      } else {
+        state.sensorProblem = "No compass data received. Check permissions, use a supported phone, and try again.";
+        elements.start.querySelector("span").textContent = "Retry compass & location";
       }
+      elements.start.hidden = false;
+      render();
+    }
+  }, 5000);
+  if (!state.location || state.locationProblem) {
+    state.locationProblem = "";
+    requestLocation();
+  }
+  try {
+    if (userGesture && typeof DeviceOrientationEvent.requestPermission === "function") {
       const permission = await DeviceOrientationEvent.requestPermission();
       if (permission !== "granted") {
+        clearInterval(state.timer);
         state.sensorProblem = "Motion and orientation permission denied. Enable it in browser settings and try again.";
         elements.start.hidden = false;
         render();
         return;
       }
     }
-    if (!state.location || state.locationProblem) requestLocation();
-    window.removeEventListener("deviceorientation", onOrientation);
-    window.removeEventListener("deviceorientationabsolute", onOrientation);
-    window.addEventListener("deviceorientationabsolute", onOrientation);
-    window.addEventListener("deviceorientation", onOrientation);
-    clearInterval(state.timer);
-    state.timer = setInterval(() => {
-      if (Date.now() - state.lastReading >= 5000) {
-        state.heading = null;
-        state.sensorProblem = "No compass data received. Check permissions, use a supported phone, and try again.";
-        elements.start.hidden = false;
-        elements.start.querySelector("span").textContent = "Retry compass & location";
-        render();
-      }
-    }, 5000);
-    state.lastReading = Date.now();
-    elements.start.querySelector("span").textContent = "Retry compass & location";
     render();
   } catch (error) {
+    clearInterval(state.timer);
     state.sensorProblem = `Could not start the compass: ${error.message || "permission request failed"}.`;
     elements.start.hidden = false;
     render();

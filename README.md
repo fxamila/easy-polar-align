@@ -17,9 +17,9 @@ Sensor access and compass behavior vary between devices and browsers. Desktop br
 
 ## Quick start
 
-1. Open [Northstar](https://fxamila.github.io/phone_polar_align/) on your phone. The app attempts to connect automatically. Allow location when prompted. If you see **Allow compass access**, tap it and allow motion and orientation access.
+1. Open [Northstar](https://fxamila.github.io/phone_polar_align/) on your phone. The app listens for compass readings and requests location automatically. Allow location when prompted. If the browser requires a gesture for motion permission, the app offers **Allow compass access** after waiting for a reading; tap it and allow access. Browser permission prompts cannot be bypassed.
 2. Check the message on the page. If it reports missing permissions or sensor data, use **Retry compass & location** and check your browser and phone settings.
-3. If necessary, calibrate the phone's compass with a figure-eight motion away from metal. Open the **Compass** tab to see the bearing, its north reference, and any device-reported accuracy.
+3. If necessary, calibrate the phone's compass with a figure-eight motion away from metal. Open the **Compass** tab to see the bearing and its north reference.
 4. Open **Polar alignment**. Switch between views by tapping the tabs or swiping horizontally across a view. Point the phone's physical top edge in the direction of the mount's polar axis, with the phone aligned to a suitable surface parallel to that axis. Adjust the mount in azimuth and altitude to move the dot toward the center of the crosshair. The displayed reading describes the phone, so an incorrectly positioned phone will not represent the mount's axis.
 5. Check for magnetic interference by comparing with a reading away from the mount. Once roughly aligned, use a star-based method to fine-tune.
 
@@ -63,7 +63,7 @@ WMM2025 is valid from **January 1, 2025 through December 31, 2029 UTC**. The mod
 
 If location or a valid declination is unavailable, the compass shows **magnetic north** instead and the pole target is disabled. The app assumes the sensor heading is magnetic; browsers do not consistently expose its reference. If a browser already supplies true north, applying declination again will produce an incorrect result. Check the reading against a known bearing, especially on a new device.
 
-The compass accuracy indicator uses the device's reported estimate when the browser exposes one: **good** is up to 5°, **fair** is above 5° and up to 15°, and **poor** is above 15°. Many Android browsers do not report an estimate, so the app shows **Unavailable** rather than guessing. Even a good estimate cannot account for all local interference.
+Browser sensor readings cannot guarantee compass accuracy. Calibrate away from metal and check the heading against a known bearing.
 
 ## Troubleshooting
 

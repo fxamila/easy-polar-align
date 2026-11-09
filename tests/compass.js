@@ -1,6 +1,6 @@
 "use strict";
 
-document.getElementById("app").addEventListener("load", () => {
+document.getElementById("app").addEventListener("load", async () => {
   const app = document.getElementById("app").contentWindow;
   const results = document.getElementById("results");
   const text = id => app.document.getElementById(id).textContent;
@@ -11,6 +11,8 @@ document.getElementById("app").addEventListener("load", () => {
     type: "deviceorientationabsolute", absolute: true, alpha, beta, gamma
   });
   const savedCalibration = app.localStorage.getItem("northstar-surface-calibration");
+  const originalPermission = Object.getOwnPropertyDescriptor(app.DeviceOrientationEvent, "requestPermission");
+  const originalSetInterval = app.setInterval;
 
   try {
     app.document.getElementById("reset-calibration").click();
@@ -73,9 +75,9 @@ document.getElementById("app").addEventListener("load", () => {
     app.onOrientation(event(270, null, null));
     assert(text("bearing") === "90.0°", "Heading available without tilt values");
     app.onOrientation({ type: "deviceorientation", webkitCompassHeading: 42, webkitCompassAccuracy: -1, beta: 70, gamma: 10 });
-    assert(text("bearing") === "42.0°" && text("message-text").includes("accuracy is unavailable"), "WebKit heading with unavailable accuracy");
+    assert(text("bearing") === "42.0°", "WebKit heading with unavailable accuracy");
     app.onOrientation({ type: "deviceorientation", webkitCompassHeading: 42, webkitCompassAccuracy: 20, beta: 89, gamma: 10 });
-    assert(text("bearing") === "42.0°" && text("message-text").includes("nearly vertical") && text("message-text").includes("±20°"), "Combined WebKit warnings");
+    assert(text("bearing") === "42.0°" && text("message-text").includes("nearly vertical"), "WebKit vertical warning");
     app.updateLocation({ coords: { latitude: -35, longitude: 149, altitude: null, accuracy: 10 } });
     app.onOrientation(event(180, 45, 0));
     const declination = app.calculateDeclination(-35, 149, 0, new Date());
@@ -143,19 +145,31 @@ document.getElementById("app").addEventListener("load", () => {
     app.onOrientation(trueEvent(0, 30, 0));
     app.document.getElementById("calibrate").click();
     assert(text("calibration-status").includes("level surface"), "Calibration rejects tilted reference");
-    app.onOrientation({ type: "deviceorientation", webkitCompassHeading: 42, webkitCompassAccuracy: 3, beta: 0, gamma: 0 });
-    assert(app.document.getElementById("accuracy").dataset.quality === "good", "Good accuracy");
-    app.onOrientation({ type: "deviceorientation", webkitCompassHeading: 42, webkitCompassAccuracy: 10, beta: 0, gamma: 0 });
-    assert(app.document.getElementById("accuracy").dataset.quality === "fair", "Fair accuracy");
-    app.onOrientation({ type: "deviceorientation", webkitCompassHeading: 42, webkitCompassAccuracy: 20, beta: 0, gamma: 0 });
-    assert(app.document.getElementById("accuracy").dataset.quality === "poor" && text("accuracy-note").includes("figure-eight"), "Poor accuracy guidance");
-    app.onOrientation(event(0, 0, 0));
-    assert(app.document.getElementById("accuracy").dataset.quality === "unknown", "Unavailable accuracy not guessed");
-    results.textContent = "PASS: tabs, orientation, poles, calibration, declination fallback and accuracy states";
+    assert(!app.document.getElementById("accuracy"), "Compass accuracy display removed");
+    let permissionCalls = 0;
+    let watchdog;
+    app.DeviceOrientationEvent.requestPermission = async () => { permissionCalls++; return "granted"; };
+    app.setInterval = callback => { watchdog = callback; return 0; };
+    app.eval("state.locationProblem = ''");
+    await app.startCompass(false);
+    app.dispatchEvent(new app.DeviceOrientationEvent("deviceorientationabsolute", { absolute: true, alpha: 30, beta: 30, gamma: 0 }));
+    assert(permissionCalls === 0 && app.document.getElementById("start").hidden &&
+      text("reference") === "TRUE NORTH", "Previously granted compass starts without a tap");
+    await app.startCompass(false);
+    app.eval("state.lastReading = Date.now() - 6000");
+    watchdog();
+    assert(!app.document.getElementById("start").hidden && text("message-text").includes("Allow compass"), "Permission button appears when no sensor reading arrives");
+    await app.startCompass(true);
+    app.dispatchEvent(new app.DeviceOrientationEvent("deviceorientationabsolute", { absolute: true, alpha: 30, beta: 30, gamma: 0 }));
+    assert(permissionCalls === 1 && app.document.getElementById("start").hidden, "Permission gesture starts compass");
+    results.textContent = "PASS: tabs, orientation, poles, calibration, declination and automatic startup";
   } catch (error) {
     results.textContent = `FAIL: ${error.message}`;
     throw error;
   } finally {
+    app.setInterval = originalSetInterval;
+    if (originalPermission) Object.defineProperty(app.DeviceOrientationEvent, "requestPermission", originalPermission);
+    else delete app.DeviceOrientationEvent.requestPermission;
     if (savedCalibration === null) app.localStorage.removeItem("northstar-surface-calibration");
     else app.localStorage.setItem("northstar-surface-calibration", savedCalibration);
   }
