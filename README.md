@@ -1,8 +1,8 @@
-# Northstar
+# Easy Polar Align
 
 **A browser-based polar alignment assistant for equatorial telescope mounts.**
 
-[Open Northstar](https://fxamila.github.io/virtual_northstar/) on your phone to get a rough starting alignment when Polaris or the region around the celestial pole is hidden. The app combines the phone's compass and orientation sensors with your location to estimate where to point the mount.
+[Open Easy Polar Align](https://fxamila.github.io/easy-polar-align/) on your phone to get a rough starting alignment when Polaris or the region around the celestial pole is hidden. The app combines the phone's compass and orientation sensors with your location to estimate where to point the mount.
 
 > **Use this for rough alignment only.** Phone sensors and nearby metal can produce errors of several degrees or more. A green indicator or a small displayed offset does not guarantee accurate polar alignment. Finish with a polar scope, plate solving, drift alignment, or another star-based method.
 
@@ -17,7 +17,7 @@ Sensor access and compass behavior vary between devices and browsers. Desktop br
 
 ## Quick start
 
-1. Open [Northstar](https://fxamila.github.io/virtual_northstar/) on your phone. Tap **Start compass**, then allow location and motion/orientation access when prompted. Some browsers require this tap to request sensor access, even if location permission was previously granted.
+1. Open [Easy Polar Align](https://fxamila.github.io/easy-polar-align/) on your phone. Tap **Start compass**, then allow location and motion/orientation access when prompted. Some browsers require this tap to request sensor access, even if location permission was previously granted.
 2. Check the message on the page. If it reports missing permissions or sensor data, use **Retry compass & location** and check your browser and phone settings.
 3. If necessary, calibrate the phone's compass with a figure-eight motion away from metal. Open the **Compass** tab to see the bearing and its north reference.
 4. Open **Polar alignment**. Switch between views by tapping the tabs or swiping horizontally across a view. Point the phone's physical top edge in the direction of the mount's polar axis, with the phone aligned to a suitable surface parallel to that axis. Adjust the mount in azimuth and altitude to move the dot toward the center of the crosshair. The displayed reading describes the phone, so an incorrectly positioned phone will not represent the mount's axis.
@@ -57,7 +57,7 @@ The pitch and roll correction is saved in the browser's local storage when avail
 
 ## Compass and true north
 
-The Compass tab shows the phone's bearing in degrees clockwise from north. With a valid location, Northstar uses the bundled **World Magnetic Model 2025** to calculate local magnetic declination and applies it to the sensor heading. East declination is added and west declination is subtracted. GPS altitude is used when available and within the model's supported range; otherwise the calculation assumes sea level.
+The Compass tab shows the phone's bearing in degrees clockwise from north. With a valid location, Easy Polar Align uses the bundled **World Magnetic Model 2025** to calculate local magnetic declination and applies it to the sensor heading. East declination is added and west declination is subtracted. GPS altitude is used when available and within the model's supported range; otherwise the calculation assumes sea level.
 
 WMM2025 is valid from **January 1, 2025 through December 31, 2029 UTC**. The model calculates declination directly for the location and date rather than looking it up on a fixed grid. Declination is displayed to 0.01°, but that resolution does **not** imply that the phone can point to within 0.25°.
 
@@ -78,7 +78,7 @@ Browser sensor readings cannot guarantee compass accuracy. Calibrate away from m
 
 ## Privacy and offline behavior
 
-Northstar is a static HTML, CSS, and JavaScript site. Location, sensor readings, and declination calculations stay in the browser; the app has no server-side code, tracking, or external data API. Surface calibration is stored locally when supported.
+Easy Polar Align is a static HTML, CSS, and JavaScript site. Location, sensor readings, and declination calculations stay in the browser; the app has no server-side code, tracking, or external data API. Surface calibration is stored locally when supported.
 
 Once the page and its bundled files have loaded, calculations do not require further network requests. There is no offline installer or service worker, so reopening the site without a connection is not guaranteed.
 

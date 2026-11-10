@@ -18,12 +18,13 @@ document.getElementById("app").addEventListener("load", async () => {
     const metadata = app.document.head;
     const canonical = metadata.querySelector('link[rel="canonical"]').href;
     const structuredData = JSON.parse(metadata.querySelector('script[type="application/ld+json"]').textContent);
-    assert(structuredData["@type"] === "WebApplication" && structuredData.name === "Northstar" &&
-      structuredData.url === canonical && metadata.querySelector('meta[property="og:url"]').content === canonical,
+    assert(structuredData["@type"] === "WebApplication" && structuredData.name === "Easy Polar Align" &&
+      canonical === "https://fxamila.github.io/easy-polar-align/" && structuredData.url === canonical &&
+      metadata.querySelector('meta[property="og:url"]').content === canonical,
       "Search metadata uses the canonical application URL");
     assert(metadata.querySelector('meta[name="description"]').content &&
       metadata.querySelector('meta[name="twitter:description"]').content, "Search and social descriptions are present");
-    assert(app.document.title.toLowerCase().includes("online polar alignment") &&
+    assert(app.document.title.toLowerCase().includes("online rough polar alignment") &&
       metadata.querySelector('meta[name="description"]').content.toLowerCase().includes("online polar alignment") &&
       app.document.querySelector("h1").textContent.toLowerCase().includes("online polar alignment"),
       "Title, description, and heading describe online polar alignment");
