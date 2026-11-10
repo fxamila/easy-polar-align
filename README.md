@@ -2,7 +2,7 @@
 
 **A browser-based polar alignment assistant for equatorial telescope mounts.**
 
-[Open Northstar](https://fxamila.github.io/virtual_northstar/) on your phone to get a rough starting alignment when the celestial pole is difficult to see. The app combines the phone's compass and orientation sensors with your location to estimate where to point the mount.
+[Open Northstar](https://fxamila.github.io/virtual_northstar/) on your phone to get a rough starting alignment when Polaris or the region around the celestial pole is hidden. The app combines the phone's compass and orientation sensors with your location to estimate where to point the mount.
 
 > **Use this for rough alignment only.** Phone sensors and nearby metal can produce errors of several degrees or more. A green indicator or a small displayed offset does not guarantee accurate polar alignment. Finish with a polar scope, plate solving, drift alignment, or another star-based method.
 
@@ -94,7 +94,9 @@ Open `http://localhost:8000` on the same device running the server. A phone acce
 
 To publish your own copy on GitHub Pages, push the files to a repository, then enable Pages for the branch and root folder. Open the resulting HTTPS URL on the phone.
 
-The page's canonical and social URLs and [`sitemap.xml`](./sitemap.xml) point to the original GitHub Pages site. If you host your own copy, update these URLs to match your deployment. For Google discovery, you can verify the site in [Google Search Console](https://search.google.com/search-console/) and submit its sitemap or request indexing. Crawling and search placement are not guaranteed.
+The page's canonical, social, and structured-data URLs and [`sitemap.xml`](./sitemap.xml) point to the original GitHub Pages site. If you host your own copy, update these URLs to match your deployment.
+
+For search discovery, verify the site in [Google Search Console](https://search.google.com/search-console/) and [Bing Webmaster Tools](https://www.bing.com/webmasters/), then submit the sitemap or request indexing. The page includes descriptive metadata and structured data, but these do not guarantee indexing, rich results, search placement, or inclusion in AI-generated answers. [Google's guidance for AI features](https://developers.google.com/search/docs/appearance/ai-features) recommends the same fundamentals as ordinary search; there are no special AI-specific markup requirements.
 
 For browser-based regression tests, run the local server and open `http://localhost:8000/tests/compass.html`. The tests simulate sensor data; they do not replace testing on a physical phone.
 

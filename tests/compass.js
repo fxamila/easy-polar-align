@@ -15,6 +15,18 @@ document.getElementById("app").addEventListener("load", async () => {
   const originalSetInterval = app.setInterval;
 
   try {
+    const metadata = app.document.head;
+    const canonical = metadata.querySelector('link[rel="canonical"]').href;
+    const structuredData = JSON.parse(metadata.querySelector('script[type="application/ld+json"]').textContent);
+    assert(structuredData["@type"] === "WebApplication" && structuredData.name === "Northstar" &&
+      structuredData.url === canonical && metadata.querySelector('meta[property="og:url"]').content === canonical,
+      "Search metadata uses the canonical application URL");
+    assert(metadata.querySelector('meta[name="description"]').content &&
+      metadata.querySelector('meta[name="twitter:description"]').content, "Search and social descriptions are present");
+    assert(app.document.title.toLowerCase().includes("online polar alignment") &&
+      metadata.querySelector('meta[name="description"]').content.toLowerCase().includes("online polar alignment") &&
+      app.document.querySelector("h1").textContent.toLowerCase().includes("online polar alignment"),
+      "Title, description, and heading describe online polar alignment");
     app.document.getElementById("reset-calibration").click();
     const compassTab = app.document.getElementById("compass-tab");
     const poleTab = app.document.getElementById("pole-tab");
@@ -106,9 +118,13 @@ document.getElementById("app").addEventListener("load", async () => {
     poleTab.click();
     assert(text("pole-result") === "10.0° away", "Readings update while polar tab is hidden");
     app.onOrientation(trueEvent(0, 35, 0));
-    assert(text("pole-result") === "10.0° away" && parseFloat(dot.style.top) > 50, "Below pole moves dot down");
+    assert(text("pole-result") === "10.0° away" && parseFloat(dot.style.top) > 50 &&
+      text("pole-status").includes("below center"), "Below pole moves dot down");
     app.onOrientation(trueEvent(0, 55, 0));
-    assert(text("pole-result") === "10.0° away" && parseFloat(dot.style.top) < 50, "Above pole moves dot up");
+    assert(text("pole-result") === "10.0° away" && parseFloat(dot.style.top) < 50 &&
+      text("pole-status").includes("above center"), "Above pole moves dot up");
+    app.onOrientation(trueEvent(350, 55, 0));
+    assert(text("pole-status").includes("right of center and above center"), "Combined directions are grammatical");
     app.onOrientation(trueEvent(350, 45, 0));
     assert(parseFloat(dot.style.left) > 50 && text("pole-result") !== "0.0° away", "Clockwise of north moves dot right");
     app.onOrientation(trueEvent(10, 45, 0));

@@ -231,10 +231,10 @@ function renderPole(headingAvailable, isTrue, bearing) {
   elements.poleCard.style.setProperty("--aim-color", offset.separation <= 1 ? "#caeaa1" : offset.separation <= 5 ? "#e5ca86" : "#ff9b35");
   elements.poleResult.textContent = `${offset.separation.toFixed(1)}° away`;
   const directions = [];
-  if (Math.abs(offset.x * offset.separation) >= 0.1) directions.push(offset.x < 0 ? "left" : "right");
-  if (Math.abs(offset.y * offset.separation) >= 0.1) directions.push(offset.y < 0 ? "below" : "above");
+  if (Math.abs(offset.x * offset.separation) >= 0.1) directions.push(offset.x < 0 ? "left of center" : "right of center");
+  if (Math.abs(offset.y * offset.separation) >= 0.1) directions.push(offset.y < 0 ? "below center" : "above center");
   elements.poleStatus.textContent = offset.separation <= 1 ? "Close to the pole target (sensor estimate)." :
-    `Dot is ${directions.join(" and ")} of center.` +
+    `The dot is ${directions.join(" and ")}.` +
     (offset.separation > 15 ? " It stays at the edge until within 15°." : " Move it to the center.");
 }
 
