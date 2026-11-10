@@ -95,7 +95,8 @@ button{cursor:pointer}
 .settings p{max-width:520px}
 .settings label{display:block;color:#e3e9df;margin:16px 0 6px}
 select{width:100%;border:1px solid #4a5b50;border-radius:5px;background:#1a2526;color:var(--text);padding:11px}
-footer{display:flex;justify-content:space-between;gap:10px;padding:48px 0 35px;color:#74857b;font-size:9px}
+footer{padding:48px 0 35px;color:#aab8ad;font-size:11px;letter-spacing:.04em}
+footer a{color:var(--green)}
 .noscript{position:fixed;bottom:0;background:#f4d0a6;color:#222;padding:16px;width:100%;text-align:center}
 @media(max-width:380px){.app{padding:0 20px}.topbar{height:72px}.detail:nth-child(even){padding-left:14px}.compass-card{padding-left:20px;padding-right:20px}.card-footer{margin:0 -20px;padding-left:20px;padding-right:20px}}
 @media(prefers-reduced-motion:no-preference){button{transition:background .2s,border-color .2s}}

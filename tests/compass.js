@@ -13,6 +13,7 @@ document.getElementById("app").addEventListener("load", async () => {
   const savedCalibration = app.localStorage.getItem("northstar-surface-calibration");
   const originalPermission = Object.getOwnPropertyDescriptor(app.DeviceOrientationEvent, "requestPermission");
   const originalSetInterval = app.setInterval;
+  const originalGeolocation = Object.getOwnPropertyDescriptor(app.navigator, "geolocation");
 
   try {
     const metadata = app.document.head;
@@ -28,6 +29,9 @@ document.getElementById("app").addEventListener("load", async () => {
       metadata.querySelector('meta[name="description"]').content.toLowerCase().includes("online polar alignment") &&
       app.document.querySelector("h1").textContent.toLowerCase().includes("online polar alignment"),
       "Title, description, and heading describe online polar alignment");
+    assert(app.document.querySelector("footer").textContent.includes("v1.0.0") &&
+      app.document.querySelector("footer a").href === "https://github.com/fxamila/easy-polar-align",
+      "Footer shows version and GitHub link");
     app.document.getElementById("reset-calibration").click();
     const compassTab = app.document.getElementById("compass-tab");
     const poleTab = app.document.getElementById("pole-tab");
@@ -114,6 +118,18 @@ document.getElementById("app").addEventListener("load", async () => {
     assert(text("pole-result") === "0.0° away" && text("phone-altitude") === "45.0°" &&
       text("pole-altitude") === "45.0°" && dot.style.left === "50%" && dot.style.top === "50%" &&
       poleCard.style.getPropertyValue("--aim-color") === "#caeaa1", "Northern pole centered with roll");
+    app.updateLocation({ coords: { latitude: 45, longitude: 0, altitude: null, accuracy: 1000 } });
+    assert(!text("message-text").includes("Location accuracy is poor"), "Accuracy at threshold is not flagged as poor");
+    app.updateLocation({ coords: { latitude: 45, longitude: 0, altitude: null, accuracy: 1001 } });
+    assert(text("message-text").includes("Location accuracy is poor") &&
+      text("pole-status").includes("Location accuracy is poor"), "Poor location accuracy warns beside the target");
+    app.updateLocation({ coords: { latitude: 45, longitude: 0, altitude: null, accuracy: null } });
+    assert(text("pole-status").includes("accuracy is unavailable") && text("location-note") === "Accuracy unavailable",
+      "Unavailable location accuracy is disclosed");
+    app.updateLocation({ coords: { latitude: 0.001, longitude: 0, altitude: null, accuracy: 200 } });
+    assert(text("pole-status").includes("crosses the equator"), "Hemisphere uncertainty is disclosed");
+    app.updateLocation({ coords: { latitude: 45, longitude: 0, altitude: null, accuracy: 10 } });
+    assert(!text("pole-status").includes("Location accuracy"), "Accurate fix clears warning");
     compassTab.click();
     app.onOrientation(trueEvent(0, 35, 0));
     poleTab.click();
@@ -166,17 +182,56 @@ document.getElementById("app").addEventListener("load", async () => {
     assert(!app.document.getElementById("accuracy"), "Compass accuracy display removed");
     let permissionCalls = 0;
     let watchdog;
+    const requests = [];
+    Object.defineProperty(app.navigator, "geolocation", {
+      configurable: true, value: {
+        getCurrentPosition: (success, error, options) => requests.push({ success, error, options })
+      }
+    });
     app.DeviceOrientationEvent.requestPermission = async () => { permissionCalls++; return "granted"; };
     app.setInterval = callback => { watchdog = callback; return 0; };
     app.eval("state.locationProblem = ''");
     await app.startCompass();
-    assert(permissionCalls === 1 && !app.document.getElementById("start").hidden, "Start requests motion permission");
+    assert(permissionCalls === 1 && requests.length === 1 && requests[0].options.maximumAge === 0 &&
+      !app.document.getElementById("start").hidden, "Start requests motion permission and fresh location");
+    const fix = (latitude, accuracy = 10, timestamp = Date.now()) => ({
+      timestamp, coords: { latitude, longitude: 0, altitude: null, accuracy }
+    });
+    requests[0].success(fix(45));
+    app.dispatchEvent(new app.DeviceOrientationEvent("deviceorientationabsolute", { absolute: true, alpha: 30, beta: 30, gamma: 0 }));
+    app.eval("state.locationRequestedAt = Date.now() - 60000");
+    watchdog();
+    assert(requests.length === 2, "Location refreshes after one minute");
+    requests[1].success(fix(-35));
+    assert(text("pole-altitude") === "35.0°" && text("target-name") === "South celestial pole",
+      "Fresh location updates the pole target");
+    requests[0].success(fix(10));
+    assert(text("target-name") === "South celestial pole", "Superseded location callbacks are ignored");
+    app.eval("state.locationTime = Date.now() - 120000; render()");
+    assert(text("message-text").includes("Location is stale") && dot.hidden &&
+      text("bearing-reference") === "Magnetic north" && !app.document.getElementById("start").hidden,
+      "Expired location disables the true-north pole target");
     app.eval("state.lastReading = Date.now() - 6000");
     watchdog();
     assert(!app.document.getElementById("start").hidden && text("message-text").includes("No compass data"), "Retry remains available when no sensor reading arrives");
     await app.startCompass();
+    assert(requests.length === 3, "Retry requests a new location");
+    requests[2].success(fix(45, 10, Date.now() - 120001));
+    assert(text("message-text").includes("outdated location") && dot.hidden, "Outdated GPS fixes are rejected");
+    app.eval("state.locationRequestedAt = Date.now() - 60000");
+    watchdog();
+    requests[3].success(fix(45));
     app.dispatchEvent(new app.DeviceOrientationEvent("deviceorientationabsolute", { absolute: true, alpha: 30, beta: 30, gamma: 0 }));
     assert(permissionCalls === 2 && app.document.getElementById("start").hidden, "Retry starts compass");
+    app.document.dispatchEvent(new app.Event("visibilitychange"));
+    assert(requests.length === 5, "Returning to the page refreshes location");
+    requests[4].error({ code: 2 });
+    assert(dot.hidden && text("message-text").includes("Location unavailable") &&
+      !app.document.getElementById("start").hidden, "Location errors disable the pole target and allow retry");
+    app.eval("state.locationRequestedAt = Date.now() - 60000");
+    watchdog();
+    requests[5].success(fix(-20));
+    assert(!dot.hidden && text("target-name") === "South celestial pole", "A later location fix recovers from errors");
     app.DeviceOrientationEvent.requestPermission = async () => "denied";
     await app.startCompass();
     assert(!app.document.getElementById("start").hidden && text("message-text").includes("denied") &&
@@ -187,6 +242,8 @@ document.getElementById("app").addEventListener("load", async () => {
     throw error;
   } finally {
     app.setInterval = originalSetInterval;
+    if (originalGeolocation) Object.defineProperty(app.navigator, "geolocation", originalGeolocation);
+    else delete app.navigator.geolocation;
     if (originalPermission) Object.defineProperty(app.DeviceOrientationEvent, "requestPermission", originalPermission);
     else delete app.DeviceOrientationEvent.requestPermission;
     if (savedCalibration === null) app.localStorage.removeItem("northstar-surface-calibration");

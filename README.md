@@ -25,6 +25,10 @@ Sensor access and compass behavior vary between devices and browsers. Desktop br
 
 The phone can be tilted. Its bearing is the direction of its top edge projected onto the horizontal plane. When the top edge is nearly vertical, that projection is small and the bearing can be unstable; at exactly vertical it is undefined.
 
+While the app is running, it requests a fresh location approximately once a minute and when you return to the page. A location more than two minutes old is discarded until a fresh fix arrives. Retrying also requests a new fix. Updates may be delayed while the page is in the background.
+
+The app warns when the reported location accuracy is unavailable or worse than 1 km. Near the equator, it also warns if the reported uncertainty could put you in either hemisphere. Location accuracy is not compass accuracy: even a precise location does not guarantee an accurate alignment.
+
 ## Understanding the pole target
 
 The target is the **north celestial pole** in the northern hemisphere and the **south celestial pole** in the southern hemisphere. The app uses your latitude to set the pole's altitude above the horizon:
@@ -71,6 +75,7 @@ Browser sensor readings cannot guarantee compass accuracy. Calibrate away from m
 | --- | --- |
 | No compass data | Use a compatible phone and browser over HTTPS. Allow motion/orientation access, check browser settings, and retry. A device without a magnetometer or absolute orientation may not work. |
 | Location denied or unavailable | Enable location services and site permission, then retry. Without location, magnetic bearing may still be shown, but the polar target cannot be calculated. |
+| Location accuracy is poor | Enable precise location for the browser and move outdoors if possible. Wait for an updated fix; location accuracy does not measure compass accuracy. |
 | Readings jump or disagree | Calibrate the compass with a figure-eight motion. Move away from the mount, metal objects, magnets, cables, and electronics. Compare with a known bearing. |
 | Surface calibration fails | Ensure a fresh compass and tilt reading is present. Place the phone screen-up and nearly level, then try again. |
 | Fullscreen is unavailable | The fullscreen button is disabled if the browser does not support the Fullscreen API, including some iPhone Safari versions. |

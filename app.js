@@ -20,9 +20,13 @@ const state = {
   heading: null, altitude: null, lastReading: 0, location: null, declination: null,
   poleHeading: null, sample: null, calibration: null,
   sensorProblem: "Tap Start compass and allow location and motion access.",
-  locationProblem: "", started: false, timer: null, locationRequest: 0
+  locationProblem: "", locationWarning: "", locationTime: null,
+  started: false, timer: null, locationRequest: 0, locationRequestedAt: 0
 };
 
+const LOCATION_REFRESH_MS = 60000;
+const LOCATION_MAX_AGE_MS = 120000;
+const LOCATION_ACCURACY_WARNING_METERS = 1000;
 const normalize = angle => ((angle % 360) + 360) % 360;
 const displayAngle = angle => `${(Math.round(normalize(angle) * 10) % 3600 / 10).toFixed(1)}°`;
 const modelValid = date => date >= new Date("2025-01-01T00:00:00Z") && date < new Date("2030-01-01T00:00:00Z");
@@ -88,12 +92,22 @@ function updateLocation(position) {
       Math.abs(latitude) > 90 || Math.abs(longitude) > 180) {
     clearLocation();
     state.locationProblem = "The device returned an invalid location. Try again.";
+    elements.start.hidden = false;
     render();
     return;
   }
   const height = Number.isFinite(altitude) && altitude >= -1000 && altitude <= 850000 ? altitude / 1000 : 0;
   state.location = { latitude, longitude };
+  state.locationTime = Number.isFinite(position.timestamp) ? position.timestamp : Date.now();
   state.locationProblem = "";
+  state.locationWarning = !Number.isFinite(accuracy) || accuracy < 0
+    ? "Location accuracy is unavailable; the pole target may be unreliable."
+    : accuracy > LOCATION_ACCURACY_WARNING_METERS
+      ? "Location accuracy is poor; the pole target may be unreliable. Enable precise location or move outdoors."
+      : "";
+  if (Number.isFinite(accuracy) && accuracy >= 0 && Math.abs(latitude) * 111000 <= accuracy) {
+    state.locationWarning += " Location uncertainty crosses the equator; the selected celestial pole may be wrong.";
+  }
   const date = new Date();
   state.declination = modelValid(date) ? calculateDeclination(latitude, longitude, height, date) : null;
   if (state.declination !== null && !Number.isFinite(state.declination)) {
@@ -103,7 +117,7 @@ function updateLocation(position) {
   if (!modelValid(date)) state.locationProblem = "WMM2025 is valid only through 2029. Update the model before using true north.";
   else if (Math.abs(latitude) >= 85) state.locationProblem = "Near a geographic or magnetic pole, compass headings and declination can be unreliable.";
   elements.location.textContent = `${Math.abs(latitude).toFixed(3)}° ${latitude < 0 ? "S" : "N"}, ${Math.abs(longitude).toFixed(3)}° ${longitude < 0 ? "W" : "E"}`;
-  elements.locationNote.textContent = Number.isFinite(accuracy) ? `Approx. ±${Math.round(accuracy)} m` : "Location connected";
+  elements.locationNote.textContent = Number.isFinite(accuracy) && accuracy >= 0 ? `Approx. ±${Math.round(accuracy)} m` : "Accuracy unavailable";
   elements.hemisphere.textContent = `${latitude < 0 ? "Southern" : "Northern"} hemisphere`;
   elements.targetName.textContent = latitude < 0 ? "South celestial pole" : "North celestial pole";
   elements.target.textContent = latitude < 0 ? "TARGET 180°" : "TARGET 000°";
@@ -114,6 +128,8 @@ function updateLocation(position) {
 
 function clearLocation() {
   state.location = null;
+  state.locationTime = null;
+  state.locationWarning = "";
   state.declination = null;
   elements.location.textContent = "Not connected";
   elements.locationNote.textContent = "Needed for true north";
@@ -236,9 +252,15 @@ function renderPole(headingAvailable, isTrue, bearing) {
   elements.poleStatus.textContent = offset.separation <= 1 ? "Close to the pole target (sensor estimate)." :
     `The dot is ${directions.join(" and ")}.` +
     (offset.separation > 15 ? " It stays at the edge until within 15°." : " Move it to the center.");
+  if (state.locationWarning) elements.poleStatus.textContent += ` ${state.locationWarning}`;
 }
 
 function render() {
+  if (state.location && Date.now() - state.locationTime >= LOCATION_MAX_AGE_MS) {
+    clearLocation();
+    state.locationProblem = "Location is stale. Waiting for a fresh location; try again if it does not update.";
+    elements.start.hidden = false;
+  }
   const headingAvailable = state.heading !== null && Date.now() - state.lastReading < 5000;
   const hasCorrection = state.location !== null && state.declination !== null && modelValid(new Date());
   const isTrue = headingAvailable && hasCorrection;
@@ -271,20 +293,34 @@ function render() {
   }
   const poleBearing = isTrue ? normalize(state.poleHeading + state.declination) : state.poleHeading;
   renderPole(headingAvailable, isTrue, poleBearing);
-  elements.message.textContent = [state.sensorProblem, state.locationProblem].filter(Boolean).join(" ") ||
+  elements.message.textContent = [state.sensorProblem, state.locationProblem, state.locationWarning].filter(Boolean).join(" ") ||
     (headingAvailable && !isTrue ? "Magnetic bearing only. Allow location to correct to true north." :
       "Keep your phone away from metal. Use a star-based method for precise alignment.");
 }
 
 function requestLocation() {
   const request = ++state.locationRequest;
+  state.locationRequestedAt = Date.now();
   if ("geolocation" in navigator) {
     navigator.geolocation.getCurrentPosition(
-      position => { if (request === state.locationRequest) { updateLocation(position); if (state.heading !== null && state.declination !== null) elements.start.hidden = true; } },
+      position => {
+        if (request !== state.locationRequest) return;
+        if (!Number.isFinite(position.timestamp) || position.timestamp > Date.now() + 5000 ||
+            Date.now() - position.timestamp >= LOCATION_MAX_AGE_MS) {
+          clearLocation();
+          state.locationProblem = "The device returned an outdated location. Try again.";
+          elements.start.hidden = false;
+          render();
+          return;
+        }
+        updateLocation(position);
+        if (state.heading !== null && state.declination !== null && state.location) elements.start.hidden = true;
+      },
       error => { if (request === state.locationRequest) locationError(error); },
-      { enableHighAccuracy: true, timeout: 20000, maximumAge: 60000 }
+      { enableHighAccuracy: true, timeout: 20000, maximumAge: 0 }
     );
   } else {
+    clearLocation();
     state.locationProblem = "Location is unavailable in this browser; true north correction needs location.";
     elements.start.hidden = false;
   }
@@ -308,6 +344,7 @@ async function startCompass() {
   window.removeEventListener("deviceorientation", onOrientation);
   window.removeEventListener("deviceorientationabsolute", onOrientation);
   clearInterval(state.timer);
+  state.timer = null;
   state.heading = null;
   state.altitude = null;
   state.sample = null;
@@ -320,10 +357,8 @@ async function startCompass() {
   try {
     const permissionRequest = typeof DeviceOrientationEvent.requestPermission === "function"
       ? DeviceOrientationEvent.requestPermission() : null;
-    if (!state.location || state.locationProblem) {
-      state.locationProblem = "";
-      requestLocation();
-    }
+    state.locationProblem = "";
+    requestLocation();
     if (permissionRequest) {
       const permission = await permissionRequest;
       if (permission !== "granted") {
@@ -340,17 +375,19 @@ async function startCompass() {
     }
     state.lastReading = Date.now();
     state.timer = setInterval(() => {
+      if (Date.now() - state.locationRequestedAt >= LOCATION_REFRESH_MS) requestLocation();
       if (Date.now() - state.lastReading >= 5000) {
         state.heading = null;
         state.sensorProblem = "No compass data received. Check permissions, use a supported phone, and try again.";
         elements.start.hidden = false;
         elements.start.querySelector("span").textContent = "Retry compass & location";
-        render();
       }
+      render();
     }, 5000);
     render();
   } catch (error) {
     clearInterval(state.timer);
+    state.timer = null;
     window.removeEventListener("deviceorientation", onOrientation);
     window.removeEventListener("deviceorientationabsolute", onOrientation);
     state.heading = null;
@@ -365,6 +402,12 @@ async function startCompass() {
 }
 
 elements.start.addEventListener("click", startCompass);
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden && state.started && state.timer !== null) {
+    render();
+    requestLocation();
+  }
+});
 
 function showCalibration(message) {
   elements.calibrationStatus.textContent = message || (state.calibration
