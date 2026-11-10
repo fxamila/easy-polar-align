@@ -29,7 +29,7 @@ document.getElementById("app").addEventListener("load", async () => {
       metadata.querySelector('meta[name="description"]').content.toLowerCase().includes("online polar alignment") &&
       app.document.querySelector("h1").textContent.toLowerCase().includes("online polar alignment"),
       "Title, description, and heading describe online polar alignment");
-    assert(app.document.querySelector("footer").textContent.includes("v1.0.0") &&
+    assert(app.document.querySelector("footer").textContent.includes("v1.0.17") &&
       app.document.querySelector("footer a").href === "https://github.com/fxamila/easy-polar-align",
       "Footer shows version and GitHub link");
     app.document.getElementById("reset-calibration").click();
