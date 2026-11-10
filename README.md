@@ -19,7 +19,7 @@ Sensor access and compass behavior vary between devices and browsers. Desktop br
 
 1. Open [Easy Polar Align](https://fxamila.github.io/easy-polar-align/) on your phone. Tap **Start compass**, then allow location and motion/orientation access when prompted. Some browsers require this tap to request sensor access, even if location permission was previously granted.
 2. Check the message on the page. If it reports missing permissions or sensor data, use **Retry compass & location** and check your browser and phone settings.
-3. If necessary, calibrate the phone's compass with a figure-eight motion away from metal. Open the **Compass** tab to see the bearing and its north reference.
+3. If necessary, calibrate the phone's compass with a figure-eight motion away from metal. The **Compass** tab opens first and shows the bearing and its north reference.
 4. Open **Polar alignment**. Switch between views by tapping the tabs or swiping horizontally across a view. Point the phone's physical top edge in the direction of the mount's polar axis, with the phone aligned to a suitable surface parallel to that axis. Adjust the mount in azimuth and altitude to move the dot toward the center of the crosshair. The displayed reading describes the phone, so an incorrectly positioned phone will not represent the mount's axis.
 5. Check for magnetic interference by comparing with a reading away from the mount. Once roughly aligned, use a star-based method to fine-tune.
 

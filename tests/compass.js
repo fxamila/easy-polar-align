@@ -14,6 +14,7 @@ document.getElementById("app").addEventListener("load", async () => {
   const originalPermission = Object.getOwnPropertyDescriptor(app.DeviceOrientationEvent, "requestPermission");
   const originalSetInterval = app.setInterval;
   const originalGeolocation = Object.getOwnPropertyDescriptor(app.navigator, "geolocation");
+  const originalHidden = Object.getOwnPropertyDescriptor(app.document, "hidden");
 
   try {
     const metadata = app.document.head;
@@ -29,7 +30,7 @@ document.getElementById("app").addEventListener("load", async () => {
       metadata.querySelector('meta[name="description"]').content.toLowerCase().includes("online polar alignment") &&
       app.document.querySelector("h1").textContent.toLowerCase().includes("online polar alignment"),
       "Title, description, and heading describe online polar alignment");
-    assert(app.document.querySelector("footer").textContent.includes("v1.0.17") &&
+    assert(app.document.querySelector("footer").textContent.includes("v1.0.18") &&
       app.document.querySelector("footer a").href === "https://github.com/fxamila/easy-polar-align",
       "Footer shows version and GitHub link");
     app.document.getElementById("reset-calibration").click();
@@ -38,27 +39,27 @@ document.getElementById("app").addEventListener("load", async () => {
     const compassPanel = app.document.getElementById("compass-panel");
     const polePanel = app.document.getElementById("pole-panel");
     assert(!app.document.getElementById("start").hidden && text("message-text").includes("Start compass"), "Start button visible on load");
-    assert(compassPanel.hidden && !polePanel.hidden && poleTab.getAttribute("aria-selected") === "true", "Polar tab initially selected");
-    compassTab.click();
-    assert(!compassPanel.hidden && polePanel.hidden && compassTab.getAttribute("aria-selected") === "true", "Compass tab selected");
+    assert(app.document.querySelector('[role="tab"]') === compassTab &&
+      !compassPanel.hidden && polePanel.hidden && compassTab.getAttribute("aria-selected") === "true" &&
+      compassTab.tabIndex === 0 && poleTab.tabIndex === -1, "Compass tab initially selected and first");
     poleTab.click();
     assert(compassPanel.hidden && !polePanel.hidden && poleTab.getAttribute("aria-selected") === "true" &&
       poleTab.tabIndex === 0 && compassTab.tabIndex === -1, "Polar tab selected");
+    poleTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "Home", bubbles: true }));
+    assert(!compassPanel.hidden && compassTab.tabIndex === 0, "Home selects compass tab");
+    compassTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "End", bubbles: true }));
+    assert(!polePanel.hidden && poleTab.tabIndex === 0, "End selects polar tab");
     poleTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
     assert(!compassPanel.hidden && polePanel.hidden && compassTab.tabIndex === 0, "Arrow key wraps to compass tab");
-    compassTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "Home", bubbles: true }));
-    assert(!polePanel.hidden && poleTab.tabIndex === 0, "Home selects polar tab");
-    poleTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "End", bubbles: true }));
-    assert(!compassPanel.hidden && compassTab.tabIndex === 0, "End selects compass tab");
     const pointer = (target, type, x, y, options = {}) => target.dispatchEvent(new app.PointerEvent(type, {
       bubbles: true, pointerType: "touch", isPrimary: true, pointerId: 1, clientX: x, clientY: y, ...options
     }));
-    pointer(compassPanel, "pointerdown", 50, 100);
-    pointer(app, "pointerup", 160, 105);
-    assert(!polePanel.hidden, "Swipe right opens polar tab");
-    pointer(polePanel, "pointerdown", 180, 100);
+    pointer(compassPanel, "pointerdown", 180, 100);
     pointer(app, "pointerup", 70, 105);
-    assert(!compassPanel.hidden, "Swipe left opens compass tab");
+    assert(!polePanel.hidden, "Swipe left opens polar tab");
+    pointer(polePanel, "pointerdown", 50, 100);
+    pointer(app, "pointerup", 160, 105);
+    assert(!compassPanel.hidden, "Swipe right opens compass tab");
     pointer(compassPanel, "pointerdown", 100, 100);
     pointer(app, "pointerup", 170, 250);
     assert(!compassPanel.hidden, "Vertical scroll does not change tabs");
@@ -223,6 +224,7 @@ document.getElementById("app").addEventListener("load", async () => {
     requests[3].success(fix(45));
     app.dispatchEvent(new app.DeviceOrientationEvent("deviceorientationabsolute", { absolute: true, alpha: 30, beta: 30, gamma: 0 }));
     assert(permissionCalls === 2 && app.document.getElementById("start").hidden, "Retry starts compass");
+    Object.defineProperty(app.document, "hidden", { configurable: true, value: false });
     app.document.dispatchEvent(new app.Event("visibilitychange"));
     assert(requests.length === 5, "Returning to the page refreshes location");
     requests[4].error({ code: 2 });
@@ -242,6 +244,8 @@ document.getElementById("app").addEventListener("load", async () => {
     throw error;
   } finally {
     app.setInterval = originalSetInterval;
+    if (originalHidden) Object.defineProperty(app.document, "hidden", originalHidden);
+    else delete app.document.hidden;
     if (originalGeolocation) Object.defineProperty(app.navigator, "geolocation", originalGeolocation);
     else delete app.navigator.geolocation;
     if (originalPermission) Object.defineProperty(app.DeviceOrientationEvent, "requestPermission", originalPermission);
