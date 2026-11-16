@@ -40,7 +40,10 @@ The target is the **north celestial pole** in the northern hemisphere and the **
 
 The crosshair compares the target with the phone's estimated pointing direction. Left and right represent counterclockwise and clockwise azimuth relative to the target; above and below represent the vertical component of the offset.
 
-- The number shows estimated angular separation from the pole.
+- **Total error** is the estimated angular separation from the pole.
+- **Azimuth error** is the shortest compass-bearing difference from the target bearing, shown clockwise or counterclockwise.
+- **Altitude error** is how far the phone's pointing altitude is above or below the pole altitude. The phone and pole altitudes are also listed below.
+- Azimuth and altitude errors are separate adjustment guides. The total angular error is calculated from the full directions and is not simply the sum of those two values.
 - The outer ring represents **15°**. A dot farther than 15° away stays on the outer edge until it gets closer.
 - **Green:** within 1°. **Amber:** more than 1° and up to 5°. **Orange:** more than 5°.
 - **Phone altitude** is the angle of the pointing direction above the horizon, not GPS elevation.

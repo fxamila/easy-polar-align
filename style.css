@@ -59,7 +59,13 @@ button{cursor:pointer}
 .sight-center{width:12px;height:12px;border:1px solid var(--green);border-radius:50%;transform:translate(-50%,-50%);background:var(--panel)}
 .sight-dot{width:16px;height:16px;border:2px solid #1a2526;border-radius:50%;background:var(--aim-color);box-shadow:0 0 0 2px var(--aim-color),0 0 16px var(--aim-color);transform:translate(-50%,-50%)}
 .sight-dot[hidden]{display:none}
+.pole-total-label{color:#899a90;font-size:9px;letter-spacing:.12em;font-weight:700;margin-top:8px}
 .pole-result{color:var(--aim-color);font-size:30px;font-weight:600;font-variant-numeric:tabular-nums}
+.pole-errors{display:grid;grid-template-columns:1fr 1fr;max-width:360px;margin:12px auto 0;border:1px solid var(--line);border-radius:7px}
+.pole-errors div{min-width:0;padding:12px 8px}
+.pole-errors div+div{border-left:1px solid var(--line)}
+.pole-errors span{display:block;color:#899a90;font-size:9px;letter-spacing:.1em;font-weight:700}
+.pole-errors strong{display:block;margin-top:6px;color:#e2e8de;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
 .pole-status{color:#d5ded2;font-size:12px;line-height:1.5;min-height:2em;margin:8px 0 18px}
 .pole-readings{display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .pole-readings div{padding:16px 8px}

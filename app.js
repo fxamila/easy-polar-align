@@ -11,6 +11,7 @@ const elements = {
   poleCard: document.querySelector(".pole-card"), sightDot: $("sight-dot"),
   northMarker: $("north-marker"), northLegend: $("north-legend"),
   poleResult: $("pole-result"), poleStatus: $("pole-status"),
+  azimuthError: $("azimuth-error"), altitudeError: $("altitude-error"),
   phoneAltitude: $("phone-altitude"), poleAltitude: $("pole-altitude"),
   calibrate: $("calibrate"), resetCalibration: $("reset-calibration"),
   calibrationStatus: $("calibration-status")
@@ -230,6 +231,8 @@ function renderPole(headingAvailable, isTrue, bearing) {
   if (!headingAvailable || !state.location || !isTrue || !altitudeAvailable) {
     elements.sightDot.hidden = true;
     elements.poleResult.textContent = "—";
+    elements.azimuthError.textContent = "—";
+    elements.altitudeError.textContent = "—";
     elements.poleCard.style.removeProperty("--aim-color");
     elements.poleStatus.textContent = !headingAvailable ? "Waiting for a compass reading." :
       !state.location ? "Allow location to find the celestial pole." :
@@ -239,7 +242,16 @@ function renderPole(headingAvailable, isTrue, bearing) {
   }
 
   const targetBearing = state.location.latitude < 0 ? 180 : 0;
-  const offset = poleOffset(bearing, state.altitude, targetBearing, Math.abs(state.location.latitude));
+  const targetAltitude = Math.abs(state.location.latitude);
+  const azimuthDifference = ((bearing - targetBearing + 540) % 360) - 180;
+  const altitudeDifference = state.altitude - targetAltitude;
+  elements.azimuthError.textContent = Math.abs(azimuthDifference) < 0.05
+    ? "0.0°"
+    : `${Math.abs(azimuthDifference).toFixed(1)}° ${azimuthDifference > 0 ? "clockwise" : "counterclockwise"}`;
+  elements.altitudeError.textContent = Math.abs(altitudeDifference) < 0.05
+    ? "0.0°"
+    : `${Math.abs(altitudeDifference).toFixed(1)}° ${altitudeDifference > 0 ? "above" : "below"}`;
+  const offset = poleOffset(bearing, state.altitude, targetBearing, targetAltitude);
   const distance = Math.min(offset.separation / 15, 1) * 44;
   elements.sightDot.hidden = false;
   elements.sightDot.style.left = `${50 + offset.x * distance}%`;

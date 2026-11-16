@@ -30,7 +30,7 @@ document.getElementById("app").addEventListener("load", async () => {
       metadata.querySelector('meta[name="description"]').content.toLowerCase().includes("online polar alignment") &&
       app.document.querySelector("h1").textContent.toLowerCase().includes("online polar alignment"),
       "Title, description, and heading describe online polar alignment");
-    assert(app.document.querySelector("footer").textContent.includes("v1.0.18") &&
+    assert(app.document.querySelector("footer").textContent.includes("v1.0.19") &&
       app.document.querySelector("footer a").href === "https://github.com/fxamila/easy-polar-align",
       "Footer shows version and GitHub link");
     app.document.getElementById("reset-calibration").click();
@@ -119,6 +119,10 @@ document.getElementById("app").addEventListener("load", async () => {
     assert(text("pole-result") === "0.0° away" && text("phone-altitude") === "45.0°" &&
       text("pole-altitude") === "45.0°" && dot.style.left === "50%" && dot.style.top === "50%" &&
       poleCard.style.getPropertyValue("--aim-color") === "#caeaa1", "Northern pole centered with roll");
+    assert(text("azimuth-error") === "0.0°" && text("altitude-error") === "0.0°",
+      "Separate errors are zero at the northern pole target");
+    assert(app.document.querySelector(".pole-total-label").textContent === "TOTAL ANGULAR ERROR",
+      "Total angular error is labeled separately");
     app.updateLocation({ coords: { latitude: 45, longitude: 0, altitude: null, accuracy: 1000 } });
     assert(!text("message-text").includes("Location accuracy is poor"), "Accuracy at threshold is not flagged as poor");
     app.updateLocation({ coords: { latitude: 45, longitude: 0, altitude: null, accuracy: 1001 } });
@@ -137,27 +141,36 @@ document.getElementById("app").addEventListener("load", async () => {
     assert(text("pole-result") === "10.0° away", "Readings update while polar tab is hidden");
     app.onOrientation(trueEvent(0, 35, 0));
     assert(text("pole-result") === "10.0° away" && parseFloat(dot.style.top) > 50 &&
-      text("pole-status").includes("below center"), "Below pole moves dot down");
+      text("pole-status").includes("below center") && text("azimuth-error") === "0.0°" &&
+      text("altitude-error") === "10.0° below", "Below pole moves dot down and reports altitude error");
     app.onOrientation(trueEvent(0, 55, 0));
     assert(text("pole-result") === "10.0° away" && parseFloat(dot.style.top) < 50 &&
-      text("pole-status").includes("above center"), "Above pole moves dot up");
+      text("pole-status").includes("above center") && text("altitude-error") === "10.0° above",
+      "Above pole moves dot up and reports altitude error");
     app.onOrientation(trueEvent(350, 55, 0));
-    assert(text("pole-status").includes("right of center and above center"), "Combined directions are grammatical");
+    assert(text("pole-status").includes("right of center and above center") &&
+      text("azimuth-error") === "10.0° clockwise" && text("altitude-error") === "10.0° above",
+      "Combined directions report separate azimuth and altitude errors");
     app.onOrientation(trueEvent(350, 45, 0));
-    assert(parseFloat(dot.style.left) > 50 && text("pole-result") !== "0.0° away", "Clockwise of north moves dot right");
+    assert(parseFloat(dot.style.left) > 50 && text("pole-result") !== "0.0° away" &&
+      text("azimuth-error") === "10.0° clockwise", "Clockwise of north moves dot right and reports azimuth error");
     app.onOrientation(trueEvent(10, 45, 0));
-    assert(parseFloat(dot.style.left) < 50, "Counterclockwise across north moves dot left");
+    assert(parseFloat(dot.style.left) < 50 && text("azimuth-error") === "10.0° counterclockwise",
+      "Counterclockwise across north moves dot left and reports azimuth error");
     app.onOrientation(trueEvent(0, 48, 0));
     assert(text("pole-result") === "3.0° away" && poleCard.style.getPropertyValue("--aim-color") === "#e5ca86", "Intermediate target color");
     app.onOrientation(trueEvent(180, 0, 0));
     assert(text("pole-status").includes("edge") && Math.abs(Math.hypot(parseFloat(dot.style.left) - 50, parseFloat(dot.style.top) - 50) - 44) < 0.001, "Far target clamped to edge");
     app.updateLocation({ coords: { latitude: -35, longitude: 149, altitude: null, accuracy: 10 } });
     app.onOrientation(trueEvent(180, 35, 0));
-    assert(text("pole-result") === "0.0° away" && text("pole-altitude") === "35.0°", "Southern pole centered");
+    assert(text("pole-result") === "0.0° away" && text("pole-altitude") === "35.0°" &&
+      text("azimuth-error") === "0.0°" && text("altitude-error") === "0.0°",
+      "Southern pole centered with zero separate errors");
     app.onOrientation(trueEvent(0, 145, 0));
     assert(text("pole-result") === "0.0° away" && text("phone-altitude") === "35.0°", "Inverted top edge centered");
     app.onOrientation(event(180, null, null));
-    assert(dot.hidden && text("pole-status").includes("altitude"), "Missing altitude hides target");
+    assert(dot.hidden && text("pole-status").includes("altitude") &&
+      text("azimuth-error") === "—" && text("altitude-error") === "—", "Missing altitude hides target and errors");
     app.locationError({ code: 1 });
     app.onOrientation(event(180, 35, 0));
     assert(dot.hidden && text("pole-status").includes("location"), "Missing location hides target");
