@@ -12,6 +12,7 @@ const elements = {
   northMarker: $("north-marker"), northLegend: $("north-legend"),
   poleResult: $("pole-result"), poleStatus: $("pole-status"),
   azimuthError: $("azimuth-error"), altitudeError: $("altitude-error"),
+  compassRuler: $("compass-ruler"),
   phoneAltitude: $("phone-altitude"), poleAltitude: $("pole-altitude"),
   calibrate: $("calibrate"), resetCalibration: $("reset-calibration"),
   calibrationStatus: $("calibration-status")
@@ -33,6 +34,20 @@ const displayAngle = angle => `${(Math.round(normalize(angle) * 10) % 3600 / 10)
 const modelValid = date => date >= new Date("2025-01-01T00:00:00Z") && date < new Date("2030-01-01T00:00:00Z");
 
 const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
+for (const degree of Array.from({ length: 217 }, (_, index) => index * 5)) {
+  const tick = document.createElement("span");
+  const isNorth = degree % 360 === 0;
+  const compassPoint = { 90: "E", 180: "S", 270: "W" }[degree % 360];
+  tick.className = `compass-ruler-tick${degree % 30 === 0 ? " is-major" : ""}${isNorth ? " is-north" : ""}`;
+  tick.style.left = `${degree / 1080 * 100}%`;
+  if (degree % 30 === 0) {
+    const label = document.createElement("span");
+    label.textContent = isNorth ? "N" : compassPoint || `${degree % 360}°`;
+    tick.append(label);
+  }
+  elements.compassRuler.append(tick);
+}
+
 function selectTab(selected) {
   for (const tab of tabs) {
     const active = tab === selected;
@@ -40,6 +55,11 @@ function selectTab(selected) {
     tab.tabIndex = active ? 0 : -1;
     $(tab.getAttribute("aria-controls")).hidden = !active;
   }
+  render();
+  document.querySelector(".view-tabs").scrollIntoView({
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth",
+    block: "start"
+  });
 }
 
 for (const tab of tabs) {
@@ -256,7 +276,7 @@ function renderPole(headingAvailable, isTrue, bearing) {
   elements.sightDot.hidden = false;
   elements.sightDot.style.left = `${50 + offset.x * distance}%`;
   elements.sightDot.style.top = `${50 - offset.y * distance}%`;
-  elements.poleCard.style.setProperty("--aim-color", offset.separation <= 1 ? "#caeaa1" : offset.separation <= 5 ? "#e5ca86" : "#ff9b35");
+  elements.poleCard.style.setProperty("--aim-color", offset.separation <= 1 ? "#00ff00" : offset.separation <= 5 ? "#e5ca86" : "#ff9b35");
   elements.poleResult.textContent = `${offset.separation.toFixed(1)}° away`;
   const directions = [];
   if (Math.abs(offset.x * offset.separation) >= 0.1) directions.push(offset.x < 0 ? "left of center" : "right of center");
@@ -285,6 +305,11 @@ function render() {
     : "NORTH MARKER UNAVAILABLE";
 
   elements.bearing.innerHTML = `${headingAvailable ? displayAngle(bearing).slice(0, -1) : "---"}<span>°</span>`;
+  const rulerWidth = elements.compassRuler.parentElement.clientWidth;
+  if (rulerWidth > 0) {
+    elements.compassRuler.style.transform = `translateX(${rulerWidth / 2 - (360 + (headingAvailable ? bearing : 0)) / 360 * rulerWidth}px)`;
+  }
+  elements.compassRuler.parentElement.classList.toggle("has-reading", headingAvailable);
   elements.reference.textContent = isTrue ? "TRUE NORTH" : headingAvailable ? "MAGNETIC NORTH" : "—";
   elements.bearingReference.textContent = isTrue ? "True north" : headingAvailable ? "Magnetic north" : "—";
   elements.live.classList.toggle("active", headingAvailable);
@@ -420,6 +445,7 @@ document.addEventListener("visibilitychange", () => {
     requestLocation();
   }
 });
+window.addEventListener("resize", render);
 
 function showCalibration(message) {
   elements.calibrationStatus.textContent = message || (state.calibration

@@ -24,7 +24,16 @@ button{cursor:pointer}
 .bearing{font-size:clamp(76px,18vw,112px);font-weight:500;line-height:1;letter-spacing:-.075em;font-variant-numeric:tabular-nums}
 .bearing span{font-size:.43em;vertical-align:top;position:relative;top:.1em;margin-left:6px;letter-spacing:0;color:var(--green)}
 .bearing-description{margin-top:13px;color:var(--green);font-size:11px;letter-spacing:.18em;font-weight:700}
-.scale-decoration{height:9px;margin:0 0 22px;background:repeating-linear-gradient(90deg,#617267 0 1px,transparent 1px 5%);opacity:.6}
+.compass-ruler-viewport{position:relative;height:42px;margin:0 0 17px;overflow:hidden;mask-image:linear-gradient(90deg,transparent,#000 9%,#000 91%,transparent)}
+.compass-ruler{position:relative;width:300%;height:100%;transition:transform .18s linear;opacity:.38}
+.compass-ruler-viewport.has-reading .compass-ruler{opacity:1}
+.compass-ruler-tick{position:absolute;top:0;height:15px;border-left:1px solid #71877a}
+.compass-ruler-tick.is-major{height:24px;border-color:#aab8ad}
+.compass-ruler-tick.is-north{border-color:#ff5656}
+.compass-ruler-tick span{position:absolute;top:27px;left:0;transform:translateX(-50%);color:#aab8ad;font-size:9px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.compass-ruler-tick.is-north span{color:#ff6969;font-weight:700}
+.compass-ruler-pointer{position:absolute;left:50%;top:0;height:100%;width:1px;background:#ff5656;box-shadow:0 0 6px #ff5656}
+.compass-ruler-pointer::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);border-top:7px solid #ff5656;border-right:5px solid transparent;border-left:5px solid transparent}
 .card-footer{border-top:1px solid #425147;margin:0 -25px;padding:17px 25px;color:#b1c0b3;font-size:9px;letter-spacing:.1em}
 .footer-dot{width:5px;height:5px;margin-right:5px}
 .message{display:flex;align-items:flex-start;gap:12px;color:#bac7b8;font-size:12px;line-height:1.6;padding:20px 2px}
@@ -44,7 +53,8 @@ button{cursor:pointer}
 .pole-scale{color:#899a90;font-size:9px;letter-spacing:.1em;font-weight:700}
 .pole-instruction,.pole-caveat{color:#9eaca4;font-size:12px;line-height:1.6}
 .pole-instruction{max-width:330px;margin:18px auto 10px}
-.pole-sight{position:relative;width:min(100%,240px);aspect-ratio:1;margin:18px auto}
+.pole-instrument{width:min(100%,280px);margin:18px auto 0}
+.pole-sight{position:relative;width:100%;aspect-ratio:1;margin:0 auto}
 .sight-ring,.sight-line,.sight-center,.sight-dot{position:absolute;left:50%;top:50%}
 .sight-ring{border:1px solid #51665a;border-radius:50%;transform:translate(-50%,-50%)}
 .sight-ring-outer{width:88%;height:88%}
@@ -56,6 +66,7 @@ button{cursor:pointer}
 .north-marker span{position:absolute;top:-7px;left:50%;width:4px;height:14px;border-radius:2px;background:#ff5656;transform:translateX(-50%);box-shadow:0 0 7px #ff5656}
 .north-marker[hidden]{display:none}
 .north-legend{color:#ff8585;font-size:10px;font-weight:700;letter-spacing:.08em;margin:0 0 12px}
+.pole-card>.north-legend{margin-top:0}
 .sight-center{width:12px;height:12px;border:1px solid var(--green);border-radius:50%;transform:translate(-50%,-50%);background:var(--panel)}
 .sight-dot{width:16px;height:16px;border:2px solid #1a2526;border-radius:50%;background:var(--aim-color);box-shadow:0 0 0 2px var(--aim-color),0 0 16px var(--aim-color);transform:translate(-50%,-50%)}
 .sight-dot[hidden]{display:none}
@@ -106,3 +117,4 @@ footer a{color:var(--green)}
 .noscript{position:fixed;bottom:0;background:#f4d0a6;color:#222;padding:16px;width:100%;text-align:center}
 @media(max-width:380px){.app{padding:0 20px}.topbar{height:72px}.detail:nth-child(even){padding-left:14px}.compass-card{padding-left:20px;padding-right:20px}.card-footer{margin:0 -20px;padding-left:20px;padding-right:20px}}
 @media(prefers-reduced-motion:no-preference){button{transition:background .2s,border-color .2s}}
+@media(prefers-reduced-motion:reduce){.compass-ruler{transition:none}}

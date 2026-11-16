@@ -2,6 +2,8 @@
 
 document.getElementById("app").addEventListener("load", async () => {
   const app = document.getElementById("app").contentWindow;
+  const testFrame = app.frameElement;
+  const originalFrameHidden = testFrame.hidden;
   const results = document.getElementById("results");
   const text = id => app.document.getElementById(id).textContent;
   const assert = (condition, message) => {
@@ -15,8 +17,15 @@ document.getElementById("app").addEventListener("load", async () => {
   const originalSetInterval = app.setInterval;
   const originalGeolocation = Object.getOwnPropertyDescriptor(app.navigator, "geolocation");
   const originalHidden = Object.getOwnPropertyDescriptor(app.document, "hidden");
+  const tabList = app.document.querySelector(".view-tabs");
+  const originalScrollIntoView = tabList.scrollIntoView;
+  const tabScrollCalls = [];
+  let testRulerViewport;
 
   try {
+    testFrame.hidden = false;
+    void testFrame.offsetWidth;
+    tabList.scrollIntoView = options => tabScrollCalls.push(options);
     const metadata = app.document.head;
     const canonical = metadata.querySelector('link[rel="canonical"]').href;
     const structuredData = JSON.parse(metadata.querySelector('script[type="application/ld+json"]').textContent);
@@ -30,9 +39,12 @@ document.getElementById("app").addEventListener("load", async () => {
       metadata.querySelector('meta[name="description"]').content.toLowerCase().includes("online polar alignment") &&
       app.document.querySelector("h1").textContent.toLowerCase().includes("online polar alignment"),
       "Title, description, and heading describe online polar alignment");
-    assert(app.document.querySelector("footer").textContent.includes("v1.0.19") &&
+    assert(app.document.querySelector("footer").textContent.includes("v1.0.20") &&
       app.document.querySelector("footer a").href === "https://github.com/fxamila/easy-polar-align",
       "Footer shows version and GitHub link");
+    assert(!app.document.querySelector(".error-gauge") &&
+      !app.document.getElementById("azimuth-gauge") && !app.document.getElementById("altitude-gauge"),
+      "Polar alignment scales are removed");
     app.document.getElementById("reset-calibration").click();
     const compassTab = app.document.getElementById("compass-tab");
     const poleTab = app.document.getElementById("pole-tab");
@@ -45,10 +57,12 @@ document.getElementById("app").addEventListener("load", async () => {
     poleTab.click();
     assert(compassPanel.hidden && !polePanel.hidden && poleTab.getAttribute("aria-selected") === "true" &&
       poleTab.tabIndex === 0 && compassTab.tabIndex === -1, "Polar tab selected");
+    assert(tabScrollCalls[0].block === "start", "Selecting a tab scrolls the tab bar to the top");
     poleTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "Home", bubbles: true }));
     assert(!compassPanel.hidden && compassTab.tabIndex === 0, "Home selects compass tab");
     compassTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "End", bubbles: true }));
     assert(!polePanel.hidden && poleTab.tabIndex === 0, "End selects polar tab");
+    assert(tabScrollCalls[2].block === "start", "Keyboard tab selection scrolls the tab bar to the top");
     poleTab.dispatchEvent(new app.KeyboardEvent("keydown", { key: "ArrowRight", bubbles: true }));
     assert(!compassPanel.hidden && polePanel.hidden && compassTab.tabIndex === 0, "Arrow key wraps to compass tab");
     const pointer = (target, type, x, y, options = {}) => target.dispatchEvent(new app.PointerEvent(type, {
@@ -60,6 +74,7 @@ document.getElementById("app").addEventListener("load", async () => {
     pointer(polePanel, "pointerdown", 50, 100);
     pointer(app, "pointerup", 160, 105);
     assert(!compassPanel.hidden, "Swipe right opens compass tab");
+    assert(tabScrollCalls[5].block === "start", "Swipe selection scrolls the tab bar to the top");
     pointer(compassPanel, "pointerdown", 100, 100);
     pointer(app, "pointerup", 170, 250);
     assert(!compassPanel.hidden, "Vertical scroll does not change tabs");
@@ -79,6 +94,20 @@ document.getElementById("app").addEventListener("load", async () => {
     app.clearLocation();
     app.onOrientation(event(270, 0, 0));
     assert(text("bearing") === "90.0°", "Flat east bearing");
+    const ruler = app.document.getElementById("compass-ruler");
+    const rulerViewport = ruler.parentElement;
+    testRulerViewport = rulerViewport;
+    Object.defineProperty(rulerViewport, "clientWidth", { configurable: true, value: 240 });
+    app.render();
+    const eastTransform = ruler.style.transform;
+    app.onOrientation(event(0, 0, 0));
+    assert(ruler.style.transform !== eastTransform &&
+      Math.abs(parseFloat(ruler.style.transform.slice(11)) - (120 - 240)) < 0.1,
+      "Compass ruler scrolls to the bearing and centers north");
+    const northTicks = [...ruler.querySelectorAll(".is-north")];
+    assert(northTicks.length === 4 && northTicks.some(tick => tick.querySelector("span").textContent === "N"),
+      "Compass ruler marks north in red");
+    app.onOrientation(event(270, 0, 0));
     assert(!north.hidden && north.style.transform === "rotate(-90deg)" &&
       text("north-legend").includes("MAGNETIC NORTH"), "East heading places magnetic north on left");
     app.onOrientation(event(270, 45, 50));
@@ -118,7 +147,7 @@ document.getElementById("app").addEventListener("load", async () => {
     poleTab.click();
     assert(text("pole-result") === "0.0° away" && text("phone-altitude") === "45.0°" &&
       text("pole-altitude") === "45.0°" && dot.style.left === "50%" && dot.style.top === "50%" &&
-      poleCard.style.getPropertyValue("--aim-color") === "#caeaa1", "Northern pole centered with roll");
+      poleCard.style.getPropertyValue("--aim-color") === "#00ff00", "Northern pole centered with bright green color");
     assert(text("azimuth-error") === "0.0°" && text("altitude-error") === "0.0°",
       "Separate errors are zero at the northern pole target");
     assert(app.document.querySelector(".pole-total-label").textContent === "TOTAL ANGULAR ERROR",
@@ -257,6 +286,9 @@ document.getElementById("app").addEventListener("load", async () => {
     throw error;
   } finally {
     app.setInterval = originalSetInterval;
+    if (testRulerViewport) delete testRulerViewport.clientWidth;
+    testFrame.hidden = originalFrameHidden;
+    tabList.scrollIntoView = originalScrollIntoView;
     if (originalHidden) Object.defineProperty(app.document, "hidden", originalHidden);
     else delete app.document.hidden;
     if (originalGeolocation) Object.defineProperty(app.navigator, "geolocation", originalGeolocation);
