@@ -104,6 +104,16 @@ document.getElementById("app").addEventListener("load", async () => {
     assert(ruler.style.transform !== eastTransform &&
       Math.abs(parseFloat(ruler.style.transform.slice(11)) - (120 - 240)) < 0.1,
       "Compass ruler scrolls to the bearing and centers north");
+    app.onOrientation({ type: "deviceorientation", webkitCompassHeading: 359 });
+    const beforeNorthWrap = parseFloat(ruler.style.transform.slice(11));
+    app.onOrientation({ type: "deviceorientation", webkitCompassHeading: 0 });
+    const afterNorthWrap = parseFloat(ruler.style.transform.slice(11));
+    assert(Math.abs(afterNorthWrap - beforeNorthWrap + 240 / 360) < 0.1,
+      "Compass ruler moves continuously from 359° through north to 0°");
+    const beforeReverseWrap = parseFloat(ruler.style.transform.slice(11));
+    app.onOrientation({ type: "deviceorientation", webkitCompassHeading: 359 });
+    assert(Math.abs(parseFloat(ruler.style.transform.slice(11)) - beforeReverseWrap - 240 / 360) < 0.1,
+      "Compass ruler moves continuously through north in either direction");
     const northTicks = [...ruler.querySelectorAll(".is-north")];
     assert(northTicks.length === 4 && northTicks.some(tick => tick.querySelector("span").textContent === "N"),
       "Compass ruler marks north in red");

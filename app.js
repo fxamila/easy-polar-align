@@ -20,7 +20,7 @@ const elements = {
 
 const state = {
   heading: null, altitude: null, lastReading: 0, location: null, declination: null,
-  poleHeading: null, sample: null, calibration: null,
+  poleHeading: null, sample: null, calibration: null, rulerBearing: null,
   sensorProblem: "Tap Start compass and allow location and motion access.",
   locationProblem: "", locationWarning: "", locationTime: null,
   started: false, timer: null, locationRequest: 0, locationRequestedAt: 0
@@ -307,7 +307,34 @@ function render() {
   elements.bearing.innerHTML = `${headingAvailable ? displayAngle(bearing).slice(0, -1) : "---"}<span>°</span>`;
   const rulerWidth = elements.compassRuler.parentElement.clientWidth;
   if (rulerWidth > 0) {
-    elements.compassRuler.style.transform = `translateX(${rulerWidth / 2 - (360 + (headingAvailable ? bearing : 0)) / 360 * rulerWidth}px)`;
+    let rulerBearing = 0;
+    let rulerRebased = false;
+    if (headingAvailable) {
+      if (state.rulerBearing === null) {
+        rulerBearing = bearing > 180 ? bearing - 360 : bearing;
+      } else {
+        rulerBearing = state.rulerBearing + ((bearing - normalize(state.rulerBearing) + 540) % 360 - 180);
+        if (rulerBearing > 180) {
+          rulerBearing -= 360;
+          rulerRebased = true;
+        } else if (rulerBearing < -180) {
+          rulerBearing += 360;
+          rulerRebased = true;
+        }
+      }
+      state.rulerBearing = rulerBearing;
+    } else {
+      state.rulerBearing = null;
+    }
+    const transform = `translateX(${rulerWidth / 2 - (360 + rulerBearing) / 360 * rulerWidth}px)`;
+    if (rulerRebased) {
+      elements.compassRuler.style.transition = "none";
+      elements.compassRuler.style.transform = transform;
+      void elements.compassRuler.offsetWidth;
+      elements.compassRuler.style.removeProperty("transition");
+    } else {
+      elements.compassRuler.style.transform = transform;
+    }
   }
   elements.compassRuler.parentElement.classList.toggle("has-reading", headingAvailable);
   elements.reference.textContent = isTrue ? "TRUE NORTH" : headingAvailable ? "MAGNETIC NORTH" : "—";
